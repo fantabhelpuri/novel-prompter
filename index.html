@@ -7,6 +7,19 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <input type="text" id="project-title" class="project-title" placeholder="Untitled Project">
+        <div class="title-bar-controls">
+            <button class="icon-button" id="save-btn" title="Save Project">💾</button>
+            <button class="icon-button" id="save-as-btn" title="Save As">💾📁</button>
+            <button class="icon-button" id="load-btn" title="Load Project">📁</button>
+            <button class="icon-button" id="system-prompt-btn" title="System Prompt">⚙️</button>
+        </div>
+        <!-- Hidden file inputs -->
+        <input type="file" id="load-file-input" accept=".json" class="hidden-file-input">
+    </div>
+
     <div class="main-container">
         <!-- Left Panel - Entries -->
         <div class="entries-panel">
@@ -27,6 +40,129 @@
         </div>
     </div>
 
+    <!-- Entry Dialog -->
+    <div id="dialog-overlay" class="dialog-overlay">
+        <div class="entry-dialog">
+            <div class="dialog-header">
+                Entry Details
+            </div>
+            <div class="dialog-content">
+                <div class="dialog-field">
+                    <label for="dialog-title">Title:</label>
+                    <input type="text" id="dialog-title">
+                </div>
+                
+                <div class="dialog-field">
+                    <label for="dialog-type-input">Type:</label>
+                    <div class="combobox-container">
+                        <input type="text" id="dialog-type-input" placeholder="Type or select an entry type..." autocomplete="off">
+                        <button type="button" class="combobox-dropdown-btn" id="type-dropdown-btn">▼</button>
+                        <div class="combobox-dropdown" id="type-dropdown">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                                
+                <div class="dialog-field checkbox-field">
+                    <input type="checkbox" id="dialog-global">
+                    <label for="dialog-global">Global Entry</label>
+                </div>
+                
+                <div class="dialog-field">
+                    <label for="dialog-description">Description:</label>
+                    <textarea id="dialog-description"></textarea>
+                </div>
+                
+                <div class="details-section">
+                    <div class="details-header">Details:</div>
+                    <div id="details-container"></div>
+                    <button type="button" class="add-button" id="add-detail-btn">Add Detail</button>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-button danger" id="dialog-delete">Delete</button>
+                <div>
+                    <button class="dialog-button secondary" id="dialog-cancel">Cancel</button>
+                    <button class="dialog-button primary" id="dialog-save">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmation-overlay" class="dialog-overlay">
+        <div class="confirmation-dialog">
+            <div class="dialog-header">
+                Confirm Delete
+            </div>
+            <div class="dialog-content">
+                <p id="confirmation-message">Are you sure you want to delete this entry?</p>
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-button secondary" id="confirmation-cancel">Cancel</button>
+                <button class="dialog-button danger" id="confirmation-confirm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Prompt Dialog -->
+    <div id="system-prompt-overlay" class="dialog-overlay">
+        <div class="system-prompt-dialog">
+            <div class="dialog-header">
+                System Prompt Configuration
+            </div>
+            <div class="dialog-content">
+                <div class="dialog-field">
+                    <label for="system-prompt-text">System Prompt</label>
+                    <textarea id="system-prompt-text" rows="6" placeholder="Enter your system prompt instructions for the AI..."></textarea>
+                </div>
+                <div class="dialog-field">
+                    <label for="style-guide-text">Style Guide</label>
+                    <textarea id="style-guide-text" rows="6" placeholder="Enter your writing style guidelines..."></textarea>
+                </div>
+                <div class="dialog-field">
+                    <label for="story-genre-input">Story Genre</label>
+                    <div class="combobox-container">
+                        <input type="text" id="story-genre-input" placeholder="Type or select a genre..." autocomplete="off">
+                        <button type="button" class="combobox-dropdown-btn" id="genre-dropdown-btn">▼</button>
+                        <div class="combobox-dropdown" id="genre-dropdown">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="dialog-field">
+                    <label for="tense-select">Tense</label>
+                    <select id="tense-select">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="dialog-field">
+                    <label for="language-select">Language</label>
+                    <select id="language-select">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="dialog-field">
+                    <label for="point-of-view-select">Point of View</label>
+                    <select id="point-of-view-select">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="dialog-field">
+                    <label for="character-select">Character</label>
+                    <select id="character-select">
+                        <option value="">Select a character...</option>
+                        <!-- Character options will be populated by JavaScript -->
+                    </select>
+                </div>                
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-button secondary" id="system-prompt-cancel">Cancel</button>
+                <button class="dialog-button primary" id="system-prompt-save">Save</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Include scripts in order -->
     <script src="data.js"></script>
     <script src="app.js"></script>

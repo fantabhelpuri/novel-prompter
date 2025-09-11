@@ -20,24 +20,40 @@ class Detail {
 }
 
 /**
- * Entry class - main entry with title, type, global, description, and detail fields
+ * Entry class - main entry with title, type, global, description, and details fields
+ * UPDATED: global is now boolean, details is now an array of Detail objects
  */
 class Entry {
-    constructor(title = '', type = '', global = '', description = '', detail = null) {
+    constructor(title = '', type = '', global = false, description = '', details = []) {
         this.title = title;           // text
         this.type = type;             // text
-        this.global = global;         // text
+        this.global = global;         // boolean (changed from text)
         this.description = description; // text
-        this.detail = detail || new Detail(); // Detail object
+        this.details = details.length > 0 ? details : []; // array of Detail objects (changed from single detail)
     }
 
-    // Method to set detail
-    setDetail(title, value) {
-        if (this.detail instanceof Detail) {
-            this.detail.update(title, value);
-        } else {
-            this.detail = new Detail(title, value);
+    // Method to add detail
+    addDetail(title, value) {
+        const detail = new Detail(title, value);
+        this.details.push(detail);
+        return detail;
+    }
+
+    // Method to remove detail by index
+    removeDetail(index) {
+        if (index >= 0 && index < this.details.length) {
+            return this.details.splice(index, 1)[0];
         }
+        return null;
+    }
+
+    // Method to update detail at index
+    updateDetail(index, title, value) {
+        if (index >= 0 && index < this.details.length) {
+            this.details[index].update(title, value);
+            return true;
+        }
+        return false;
     }
 
     // Method to get entry summary
@@ -47,11 +63,23 @@ class Entry {
             type: this.type,
             global: this.global,
             description: this.description,
-            detail: this.detail.getFormattedDetail()
+            details: this.details.map(detail => detail.getFormattedDetail())
         };
     }
+
+    static getEntryTypes() {
+        return [
+            "Character",
+            "Location", 
+            "Lore",
+            "Object",
+            "Subplot"
+        ];
+    }
+    
 }
 
+// Keep the rest of the classes (Scene, Chapter, Story) unchanged...
 /**
  * Scene class - contains text and summary fields
  */
@@ -199,6 +227,81 @@ class Story {
     }
 }
 
+// SystemPrompt class - stores system prompt configuration
+// SystemPrompt class - stores system prompt configuration
+class SystemPrompt {
+    constructor(systemPrompt = "", styleGuide = "", storyGenre = "Fantasy", tense = "Past", language = "English (US)", pointOfView = "3rd Person", character = "") {
+        this.systemPrompt = systemPrompt;
+        this.styleGuide = styleGuide;
+        this.storyGenre = storyGenre;
+        this.tense = tense;
+        this.language = language;
+        this.pointOfView = pointOfView;
+        this.character = character;
+    }
+
+    // Method to update system prompt data
+    update(systemPrompt, styleGuide, storyGenre, tense, language, pointOfView, character) {
+        this.systemPrompt = systemPrompt;
+        this.styleGuide = styleGuide;
+        this.storyGenre = storyGenre;
+        this.tense = tense;
+        this.language = language;
+        this.pointOfView = pointOfView;
+        this.character = character;
+    }
+
+    // Get all available fiction genres
+    static getGenres() {
+        return [
+            "Adventure", "Alternate History", "Apocalyptic/Post-Apocalyptic",
+            "Bildungsroman", "Bizarro Fiction", "Climate Fiction", "Comedy",
+            "Coming of Age", "Contemporary Fiction", "Crime", "Cyberpunk",
+            "Dark Fantasy", "Dystopian", "Epic Fantasy", "Epistolary",
+            "Erotica", "Fantasy", "Gothic", "Hard Science Fiction",
+            "High Fantasy", "Historical Fiction", "Horror", "Humor/Satire",
+            "Literary Fiction", "Magic Realism", "Military Fiction",
+            "Mystery", "Mythology", "New Adult", "New Weird", "Paranormal",
+            "Philosophical Fiction", "Picaresque", "Psychological Fiction",
+            "Pulp Fiction", "Romance", "Science Fantasy", "Science Fiction",
+            "Slice of Life", "Social Science Fiction", "Space Opera",
+            "Speculative Fiction", "Steam punk", "Superhero Fiction",
+            "Supernatural", "Suspense", "Sword and Sorcery", "Techno-thriller",
+            "Thriller", "Time Travel", "Urban Fantasy", "Utopian",
+            "Vampire Fiction", "Weird Fiction", "Western", "Young Adult"
+        ];
+    }
+
+    // Get tense options
+    static getTenses() {
+        return ["Past", "Present"];
+    }
+
+    // Get language options
+    static getLanguages() {
+        return [
+            "Arabic", "Bengali", "Chinese (Simplified)", "Chinese (Traditional)",
+            "Dutch", "English (Australian)", "English (Canadian)", "English (UK)",
+            "English (US)", "French (Canadian)", "French (France)", "German",
+            "Hindi", "Italian", "Japanese", "Korean", "Portuguese (Brazil)",
+            "Portuguese (Portugal)", "Russian", "Spanish (Mexico)", "Spanish (Spain)",
+            "Turkish", "Urdu"
+        ];
+    }
+
+    // Get point of view options
+    static getPointsOfView() {
+        return [
+            "1st Person",
+            "2nd Person", 
+            "3rd Person",
+            "3rd Person (Limited)",
+            "3rd Person (Omniscient)"
+        ];
+    }
+}
+
+
 // Export classes for use in other modules (if using Node.js modules)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -206,30 +309,7 @@ if (typeof module !== 'undefined' && module.exports) {
         Entry,
         Scene,
         Chapter,
-        Story
+        Story,
+        SystemPrompt
     };
 }
-
-// Example usage:
-/*
-// Create a new story
-const myStory = new Story();
-
-// Add chapters
-const chapter1Index = myStory.addChapter();
-const chapter2Index = myStory.addChapter();
-
-// Add scenes to chapter 1
-myStory.addSceneToChapter(chapter1Index, "It was a dark and stormy night...", "Introduction to the mysterious evening");
-myStory.addSceneToChapter(chapter1Index, "The protagonist enters the old mansion.", "Character arrives at main location");
-
-// Add scenes to chapter 2
-myStory.addSceneToChapter(chapter2Index, "Strange noises echo through the halls.", "Building tension and mystery");
-
-// Create an entry
-const storyEntry = new Entry("My Horror Story", "Fiction", "Public", "A thrilling horror story");
-storyEntry.setDetail("Genre", "Gothic Horror");
-
-// Get story statistics
-console.log(myStory.getStoryStats());
-*/

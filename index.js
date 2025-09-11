@@ -1,48 +1,106 @@
-const { app, BrowserWindow } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
 // Import classes from data.js
-const { Detail, Entry, Scene, Chapter, Story } = require('./data.js')
+const { Detail, Entry, Scene, Chapter, Story } = require('./data.js');
 
-function createWindow () {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  })
+let mainWindow;
 
-  // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+function createWindow() {
+    // Create the browser window.
+    mainWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: true
+        }
+    });
 
-  // Open the DevTools.
-   mainWindow.webContents.openDevTools()
+    // Load the index.html of the app.
+    mainWindow.loadFile('index.html');
+
+    // Open the DevTools.
+    //mainWindow.webContents.openDevTools();
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(createWindow)
+// IPC handlers for file operations
+ipcMain.handle('save-file', async (event, filePath, content) => {
+    try {
+        fs.writeFileSync(filePath, content, 'utf8');
+        return { success: true, filePath: filePath };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+ipcMain.handle('save-file-as', async (event, content, defaultName) => {
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save Project As',
+            defaultPath: defaultName || 'untitled.json',
+            filters: [
+                { name: 'JSON Files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        });
+
+        if (!result.canceled && result.filePath) {
+            fs.writeFileSync(result.filePath, content, 'utf8');
+            return { success: true, filePath: result.filePath };
+        } else {
+            return { success: false, error: 'Save cancelled' };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('load-file', async (event) => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: 'Load Project',
+            filters: [
+                { name: 'JSON Files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] }
+            ],
+            properties: ['openFile']
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+            const filePath = result.filePaths[0];
+            const content = fs.readFileSync(filePath, 'utf8');
+            return { success: true, content: content, filePath: filePath };
+        } else {
+            return { success: false, error: 'Load cancelled' };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('check-file-exists', async (event, filePath) => {
+    try {
+        return fs.existsSync(filePath);
+    } catch (error) {
+        return false;
+    }
+});
+
+// This method will be called when Electron has finished initialization
+app.whenReady().then(createWindow);
+
+// Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
 
 app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
-  }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});

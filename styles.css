@@ -7,14 +7,76 @@
 body {
     font-family: Arial, sans-serif;
     display: flex;
+    flex-direction: column;
     height: 100vh;
     background-color: #f0f0f0;
 }
 
+/* Hidden elements */
+.hidden-file-input {
+    display: none;
+}
+
+/* Title Bar */
+.title-bar {
+    background-color: #333;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #222;
+}
+
+.project-title {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    outline: none;
+    flex: 1;
+    padding: 5px;
+    margin-right: 20px;
+}
+
+.project-title::placeholder {
+    color: #ccc;
+}
+
+.project-title:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.title-bar-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.icon-button {
+    background-color: #555;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+    background-color: #666;
+}
+
+.icon-button:active {
+    background-color: #444;
+}
+
 .main-container {
     display: flex;
-    width: 100%;
-    height: 100vh;
+    flex: 1;
+    height: calc(100vh - 50px);
 }
 
 /* Left Panel - Entries */
@@ -54,6 +116,14 @@ body {
     font-size: 12px;
     color: #666;
     margin-top: 3px;
+}
+
+/* Empty states */
+.empty-state {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
 }
 
 /* Right Panel - Story */
@@ -164,4 +234,387 @@ body {
     padding: 10px;
     background-color: #f5f5f5;
     border-top: 1px solid #333;
+}
+
+/* Dialog Styles */
+.dialog-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.dialog-overlay.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.entry-dialog {
+    background-color: white;
+    border: 2px solid #333;
+    border-radius: 5px;
+    width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.dialog-header {
+    background-color: #ddd;
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.dialog-content {
+    padding: 20px;
+}
+
+.dialog-field {
+    margin-bottom: 15px;
+}
+
+.dialog-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.dialog-field input, .dialog-field textarea {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.dialog-field textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: auto;
+}
+
+.details-section {
+    border-top: 1px solid #ccc;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.details-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.detail-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.detail-item input {
+    flex: 1;
+}
+
+.detail-remove {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.detail-remove:hover {
+    background-color: #cc0000;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    border-top: 1px solid #ccc;
+    background-color: #f5f5f5;
+}
+
+.dialog-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.dialog-button.primary {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dialog-button.primary:hover {
+    background-color: #45a049;
+}
+
+.dialog-button.secondary {
+    background-color: #ddd;
+    color: #333;
+}
+
+.dialog-button.secondary:hover {
+    background-color: #bbb;
+}
+
+/* System Prompt Dialog */
+.system-prompt-dialog {
+    background: white;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.system-prompt-dialog .dialog-content {
+    padding: 20px;
+}
+
+.system-prompt-dialog textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.system-prompt-dialog select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+}
+
+.system-prompt-dialog textarea:focus,
+.system-prompt-dialog select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Combobox Styles */
+.combobox-container {
+    position: relative;
+    display: flex;
+    width: 100%;
+}
+
+.combobox-container input {
+    flex: 1;
+    padding: 10px 40px 10px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+    background-color: white;
+}
+
+.combobox-dropdown-btn {
+    width: 30px;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #666;
+}
+
+.combobox-dropdown-btn:hover {
+    background-color: #e9ecef;
+}
+
+.combobox-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.combobox-dropdown.show {
+    display: block;
+}
+
+.combobox-option {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.combobox-option:hover,
+.combobox-option.highlighted {
+    background-color: #f8f9fa;
+}
+
+.combobox-option:last-child {
+    border-bottom: none;
+}
+
+.combobox-container input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.combobox-container input:focus + .combobox-dropdown-btn {
+    border-color: #007bff;
+}
+
+/* Generate Prompt Button Styles */
+.scene-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.generate-prompt-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.generate-prompt-btn:hover {
+    background-color: #0056b3;
+}
+
+.generate-prompt-btn:active {
+    background-color: #004085;
+}
+
+/* Drag and Drop Styles for Entries */
+.entry-item {
+    border: 1px solid #333;
+    margin: 5px;
+    padding: 5px;
+    background-color: white;
+    cursor: grab;
+    transition: all 0.2s;
+}
+
+.entry-item:hover {
+    background-color: #f0f0f0;
+}
+
+.entry-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    cursor: grabbing;
+}
+
+.entry-item.drag-over {
+    border-top: 3px solid #007bff;
+    margin-top: 8px;
+}
+
+/* Entry Description Truncation - 2 lines max */
+.entry-description {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+    max-height: 2.4em; /* 2 lines * 1.2 line-height */
+}
+
+/* Scene Layout - Summary 25%, Text 75% */
+.scene-content {
+    display: flex;
+    min-height: 150px;
+}
+
+.scene-section.summary-section {
+    flex: 0 0 25%; /* Fixed 25% width */
+    border-right: 1px solid #333;
+}
+
+.scene-section.text-section {
+    flex: 1; /* Take remaining 75% */
+}
+
+.scene-section:last-child {
+    border-right: none;
+}
+
+/* Delete Button in Dialog */
+.dialog-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    border-top: 1px solid #ccc;
+    background-color: #f5f5f5;
+}
+
+.dialog-button.danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.dialog-button.danger:hover {
+    background-color: #c82333;
+}
+
+/* Confirmation Dialog */
+.confirmation-dialog {
+    background: white;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.confirmation-dialog .dialog-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.confirmation-dialog .dialog-buttons {
+    justify-content: center;
+    gap: 10px;
 }

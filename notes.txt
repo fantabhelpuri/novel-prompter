@@ -1,0 +1,8 @@
+export option to export stories
+make detail type a combobox too and map details to particular types of entries
+when loading project and current is unsaved ask if you want to quit while not saved
+Save is acting as Save as right now
+Maybe add a save as
+Text on entries should be cut off
+
+Now, add a button next to the summary label in every scene. When clicked on the button, it should open a dialog which should have a scrollable text area.
