@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Story Writer App</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self';">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Panel - Entries -->
+        <div class="entries-panel">
+            <div class="entries-header">Entries:</div>
+            <div id="entries-list"></div>
+            <div class="controls">
+                <button class="add-button" id="add-entry-btn">Add Entry</button>
+            </div>
+        </div>
+
+        <!-- Right Panel - Story -->
+        <div class="story-panel">
+            <div class="story-header">Story:</div>
+            <div class="chapters-container" id="chapters-container"></div>
+            <div class="controls">
+                <button class="add-button" id="add-chapter-btn">Add Chapter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include scripts in order -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build artifacts
+dist/
+build/
+.next/ # For Next.js projects
+out/ # For static site generators or build outputs
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Editor and OS specific files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Test reports
+coverage/
+
+# Local dependencies
+package-lock.json # If you prefer to regenerate it on each install (less common now)
+yarn.lock # If using Yarn and prefer to regenerate it
+pnpm-lock.yaml # If using pnpm and prefer to regenerate it
+
+# npm package files
+*.tgz # Compressed tarball files for packages
