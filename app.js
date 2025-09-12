@@ -14,6 +14,7 @@ let currentDetailIndex = -1; // -1 for new detail, >= 0 for editing existing
 let detailTitleOptions = []; // Populated from existing details
 let detailOptionValues = []; // Populated based on selected title
 let detailRegistry = new DetailRegistry();
+let currentConfirmCallback = null;
 
 // Initialize with blank data (no sample data)
 function initializeApp() {
@@ -24,6 +25,9 @@ function initializeApp() {
     renderEntries();
     renderStory();
     
+    document.getElementById('new-project-btn').addEventListener('click', newProject);
+    document.getElementById('save-btn').addEventListener('click', saveProject);
+
     // Add event listeners for the main buttons
     document.getElementById('add-entry-btn').addEventListener('click', addNewEntry);
     document.getElementById('add-chapter-btn').addEventListener('click', addNewChapter);
@@ -117,6 +121,54 @@ function initializeApp() {
             closePromptDialog();
         }
     });
+
+    // Export dialog event listeners
+    document.getElementById('export-btn').addEventListener('click', exportStory);
+    document.getElementById('export-dialog-close').addEventListener('click', closeExportDialog);
+    document.getElementById('export-copy-btn').addEventListener('click', copyExportToClipboard);
+
+    // Close export dialog when clicking overlay
+    document.getElementById('export-dialog-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeExportDialog();
+        }
+    });
+
+}
+
+function newProject() {
+    if (hasUnsavedChanges) {
+        showGenericConfirmationDialog(
+            "Unsaved Changes",
+            "You have unsaved changes. Creating a new project will discard these changes. Are you sure you want to continue?",
+            function() {
+                // User confirmed - create new project
+                initializeBlankProject();
+                renderEntries();
+                renderStory();
+                closeGenericConfirmationDialog();
+            }
+        );
+    } else {
+        // No unsaved changes - create new project directly
+        initializeBlankProject();
+        renderEntries();
+        renderStory();
+    }
+}
+
+function showGenericConfirmationDialog(title, message, confirmCallback) {
+    document.getElementById('confirmation-overlay').querySelector('.dialog-header').textContent = title;
+    document.getElementById('confirmation-message').textContent = message;
+    document.getElementById('confirmation-overlay').classList.add('show');
+    
+    // Store the callback for the confirm button
+    currentConfirmCallback = confirmCallback;
+}
+
+function closeGenericConfirmationDialog() {
+    document.getElementById('confirmation-overlay').classList.remove('show');
+    currentConfirmCallback = null;
 }
 
 function initializeBlankProject() {
@@ -1724,12 +1776,17 @@ function deleteEntry() {
 }
 
 function confirmDelete() {
-    if (currentEditingIndex !== -1) {
-        entries.splice(currentEditingIndex, 1);
-        renderEntries();
-        closeEntryDialog();
-        closeConfirmationDialog();
-        markAsChanged(); // Add this line
+    if (currentConfirmCallback) {
+        currentConfirmCallback();
+    } else {
+        // Fallback to original delete behavior if no callback
+        if (currentEditingIndex >= 0) {
+            entries.splice(currentEditingIndex, 1);
+            renderEntries();
+            closeEntryDialog();
+            markAsChanged();
+        }
+        closeGenericConfirmationDialog();
     }
 }
 
@@ -1932,6 +1989,75 @@ async function loadProjectDialog() {
         }
     } catch (error) {
         showStatusMessage("Load error: " + error.message, "error");
+    }
+}
+
+function exportStory() {
+    openExportDialog();
+}
+
+function openExportDialog() {
+    const exportText = generateStoryText();
+    document.getElementById('export-text').value = exportText;
+    document.getElementById('export-dialog-overlay').classList.add('show');
+}
+
+function closeExportDialog() {
+    document.getElementById('export-dialog-overlay').classList.remove('show');
+}
+
+function generateStoryText() {
+    if (story.chapters.length === 0) {
+        return "No story content available.";
+    }
+    
+    let storyText = "";
+    
+    story.chapters.forEach((chapter, chapterIndex) => {
+        // Add chapter heading
+        storyText += `Chapter ${chapterIndex + 1}\n\n`;
+        
+        // Add scenes for this chapter
+        chapter.scenes.forEach((scene, sceneIndex) => {
+            if (scene.text && scene.text.trim()) {
+                storyText += scene.text.trim();
+                // Add single line break after each scene (except the last scene of the chapter)
+                if (sceneIndex < chapter.scenes.length - 1) {
+                    storyText += "\n\n";
+                }
+            }
+        });
+        
+        // Add double line break after each chapter (except the last chapter)
+        if (chapterIndex < story.chapters.length - 1) {
+            storyText += "\n\n\n\n";
+        }
+    });
+    
+    return storyText;
+}
+
+function copyExportToClipboard() {
+    const exportText = document.getElementById('export-text');
+    exportText.select();
+    exportText.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        
+        // Visual feedback
+        const copyBtn = document.getElementById('export-copy-btn');
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copy-success');
+        
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copy-success');
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy to clipboard. Please select and copy manually.');
     }
 }
 

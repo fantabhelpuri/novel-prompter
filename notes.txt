@@ -1,21 +1,20 @@
-export option to export stories
-New project option
-save and load point of view character in settings when project is loaded.
+Tasks:
 when add entry open create entry dialog first instead of just creating new entry.
 Keep type empty instead of prepopulating it
 Description should have placeholder text instead of prefilling it with description
 
+Nice to have:
+collapsible left sidebar
+
+Problem:
+renaming a character should update references everywhere in the summaries?
+
+Stretch:
+generate idea button
+the summary and text barrier must be adjustable
+
+Prompt:
 I'm working on an app that let's you create an outline of a book and then convert the outline into prompts that can be fed into an AI to get back prose. I call it novel prompter. It is an electron app. I've attached all the code files. Read all the files and prepare for further instructions
-
-Now it is time to generate the prompt. It should be as such:
-1. First, it should have the System Prompt text from the Settings
-2. Next, it should have the Style Guide text from the Settings
-3. Next, it should have a sentence as follows: "Write the story in the style of the " <Insert Story Genre from Settings here> " genre"
-4. Next, it should have a sentence as follows: "Write in the " <Insert Tense from Settings here> " tense"
-5. Next, it should have a sentence as follows: "Use " <Insert Language from Settings here> " spelling, grammar, and colloquialisms/slang"
-6. Next, it should have a sentence as follows: "Write in " <Insert Point of View from Settings here> " point of view"
-7. Next, it should have a sentence as follows: "Write from the point of view of the character: " <Insert Currently Selected Character from Settings here>
-
 
 Tips:
 use full names in character descriptions to show relations. Dont use pronouns as it can confuse the AI

@@ -838,3 +838,38 @@ html, body {
     color: #666;
     font-size: 13px;
 }
+
+/* Export Dialog Styles */
+.export-dialog {
+    background: white;
+    border-radius: 8px;
+    width: 800px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.export-dialog .dialog-content {
+    padding: 20px;
+}
+
+.export-dialog textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Times New Roman', serif;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    background-color: #fafafa;
+    color: #333;
+}
+
+.export-dialog textarea:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
