@@ -195,7 +195,7 @@
                     <input type="text" id="detail-text-input" placeholder="Enter text value...">
                 </div>
                 
-                <div class="dialog-field" id="combobox-field-container" style="display: none;">
+                <div class="dialog-field" id="combobox-field-container">
                     <label for="detail-option-input">Option</label>
                     <div class="combobox-container">
                         <input type="text" id="detail-option-input" placeholder="Enter or select option..." autocomplete="off">
@@ -210,6 +210,24 @@
             <div class="dialog-buttons">
                 <button class="dialog-button secondary" id="detail-dialog-cancel">Cancel</button>
                 <button class="dialog-button primary" id="detail-dialog-save">Add Detail</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Prompt Dialog -->
+    <div id="prompt-dialog-overlay" class="dialog-overlay">
+        <div class="prompt-dialog">
+            <div class="dialog-header">Generated Prompt</div>
+            <div class="dialog-content">
+                <div class="dialog-field">
+                    <label for="prompt-text-display">AI Prompt</label>
+                    <textarea id="prompt-text-display" rows="15" readonly></textarea>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button class="dialog-button secondary" id="prompt-dialog-close">Close</button>
+                <button class="dialog-button primary" id="prompt-copy-btn">Copy to Clipboard</button>
             </div>
         </div>
     </div>

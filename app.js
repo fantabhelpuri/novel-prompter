@@ -108,6 +108,15 @@ function initializeApp() {
         }
     });
 
+    document.getElementById('prompt-dialog-close').addEventListener('click', closePromptDialog);
+    document.getElementById('prompt-copy-btn').addEventListener('click', copyPromptToClipboard);
+
+    // Close dialog when clicking overlay
+    document.getElementById('prompt-dialog-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closePromptDialog();
+        }
+    });
 }
 
 function initializeBlankProject() {
@@ -236,20 +245,59 @@ function closeEntryDialog() {
 function saveEntryDialog() {
     if (!currentEditingEntry) return;
     
+    const newTitle = document.getElementById('dialog-title').value.trim();
+    
+    // Validate title uniqueness
+    if (!validateEntryTitle(newTitle, currentEditingIndex)) {
+        alert(`An entry with the title "${newTitle}" already exists. Please choose a different title.`);
+        return;
+    }
+    
     // Update entry fields
-    currentEditingEntry.title = document.getElementById('dialog-title').value;        // FIXED: Correct field
+    currentEditingEntry.title = newTitle;
     currentEditingEntry.type = document.getElementById('dialog-type-input').value;
     currentEditingEntry.global = document.getElementById('dialog-global').checked;
     currentEditingEntry.description = document.getElementById('dialog-description').value;
-    
-    // Details are now managed by the detail dialog system - don't touch them here!
-    // The details are already saved directly to currentEditingEntry.details when
-    // using the detail dialog (saveDetailDialog function)
     
     // Re-render entries and close dialog
     renderEntries();
     closeEntryDialog();
     markAsChanged();
+    
+    // Update character dropdown if system prompt dialog is open
+    updateCharacterDropdown();
+}
+
+function updateCharacterDropdown() {
+    const characterSelect = document.getElementById('character-select');
+    if (!characterSelect) return; // Dialog not open
+    
+    const currentValue = characterSelect.value;
+    
+    // Clear and repopulate
+    characterSelect.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select a character...';
+    characterSelect.appendChild(defaultOption);
+    
+    // Add character entries
+    const characterEntries = entries.filter(entry => entry.type.toLowerCase() === 'character');
+    characterEntries.forEach(entry => {
+        const option = document.createElement('option');
+        option.value = entry.title;
+        option.textContent = entry.title;
+        characterSelect.appendChild(option);
+    });
+    
+    // Try to restore previous selection if it still exists
+    if (currentValue && characterEntries.some(entry => entry.title === currentValue)) {
+        characterSelect.value = currentValue;
+    } else if (systemPrompt.character && characterEntries.some(entry => entry.title === systemPrompt.character)) {
+        characterSelect.value = systemPrompt.character;
+    }
 }
 
 function renderDetailsInDialog() {
@@ -550,7 +598,7 @@ function renderStory() {
     story.chapters.forEach((chapter, chapterIndex) => {
         const chapterDiv = document.createElement('div');
         chapterDiv.className = 'chapter';
-        
+
         const chapterHeader = document.createElement('div');
         chapterHeader.className = 'chapter-header';
         chapterHeader.textContent = `Chapter ${chapterIndex + 1}`;
@@ -570,47 +618,96 @@ function renderStory() {
 
             const sceneContent = document.createElement('div');
             sceneContent.className = 'scene-content';
-            
+
             // Summary section (25% width)
             const summarySection = document.createElement('div');
             summarySection.className = 'scene-section summary-section';
-            
+
             const summaryHeader = document.createElement('div');
             summaryHeader.className = 'scene-section-header';
-            
+
             const summaryLabel = document.createElement('span');
             summaryLabel.textContent = 'Summary';
-            
+
             const generatePromptBtn = document.createElement('button');
             generatePromptBtn.className = 'generate-prompt-btn';
             generatePromptBtn.textContent = 'Prompt';
-            generatePromptBtn.addEventListener('click', function(e) {
+            generatePromptBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 generatePromptForScene(chapterIndex, sceneIndex);
             });
-            
+
             summaryHeader.appendChild(summaryLabel);
             summaryHeader.appendChild(generatePromptBtn);
-            
+
             const summaryTextarea = document.createElement('textarea');
             summaryTextarea.className = 'scene-textarea';
             summaryTextarea.placeholder = 'Enter scene summary...';
             summaryTextarea.value = scene.summary;
+            
+            // Create a display div for showing links
+            const summaryDisplay = document.createElement('div');
+            summaryDisplay.className = 'scene-display';
+            summaryDisplay.style.display = 'none';
+            
+            let isEditingMode = true;
+            
+            // Function to toggle between edit and display mode
+            function toggleMode() {
+                if (isEditingMode) {
+                    // Switch to display mode
+                    summaryTextarea.style.display = 'none';
+                    summaryDisplay.style.display = 'block';
+                    updateTextWithLiveLinks(summaryDisplay, summaryTextarea.value);
+                    isEditingMode = false;
+                } else {
+                    // Switch to edit mode
+                    summaryTextarea.style.display = 'block';
+                    summaryDisplay.style.display = 'none';
+                    isEditingMode = true;
+                    summaryTextarea.focus();
+                }
+            }
+            
+            // Event handlers for the textarea
+            summaryTextarea.addEventListener('blur', () => {
+                // Only switch to display mode if there's text
+                if (summaryTextarea.value.trim()) {
+                    setTimeout(() => {
+                        // Check if we're not immediately refocusing
+                        if (document.activeElement !== summaryTextarea) {
+                            toggleMode();
+                        }
+                    }, 100);
+                }
+            });
+            
             summaryTextarea.addEventListener('change', function() {
                 updateScene(chapterIndex, sceneIndex, this.value, null);
             });
             
+            // Event handler for display div
+            summaryDisplay.addEventListener('click', () => {
+                toggleMode();
+            });
+            
+            // Initialize display if there's content
+            if (scene.summary.trim()) {
+                toggleMode();
+            }
+
             summarySection.appendChild(summaryHeader);
             summarySection.appendChild(summaryTextarea);
-            
-            // Text section (75% width)
+            summarySection.appendChild(summaryDisplay);
+
+            // Text section (75% width) - keeping original functionality
             const textSection = document.createElement('div');
             textSection.className = 'scene-section text-section';
-            
+
             const textHeader = document.createElement('div');
             textHeader.className = 'scene-section-header';
             textHeader.textContent = 'Text';
-            
+
             const textTextarea = document.createElement('textarea');
             textTextarea.className = 'scene-textarea';
             textTextarea.placeholder = 'Enter scene text...';
@@ -618,14 +715,14 @@ function renderStory() {
             textTextarea.addEventListener('change', function() {
                 updateScene(chapterIndex, sceneIndex, null, this.value);
             });
-            
+
             textSection.appendChild(textHeader);
             textSection.appendChild(textTextarea);
-            
-            sceneContent.appendChild(summarySection);
-            sceneContent.appendChild(textSection);            
 
+            sceneContent.appendChild(summarySection);
+            sceneContent.appendChild(textSection);
             sceneDiv.appendChild(sceneContent);
+
             scenesContainer.appendChild(sceneDiv);
         });
 
@@ -633,13 +730,86 @@ function renderStory() {
         const addSceneButton = document.createElement('button');
         addSceneButton.className = 'add-button';
         addSceneButton.textContent = 'Add Scene';
-        addSceneButton.addEventListener('click', function() {
+        addSceneButton.addEventListener('click', () => {
             addNewScene(chapterIndex);
         });
-        scenesContainer.appendChild(addSceneButton);
 
+        scenesContainer.appendChild(addSceneButton);
         chapterDiv.appendChild(scenesContainer);
         chaptersContainer.appendChild(chapterDiv);
+    });
+}
+
+// Function to process text and create links for matching entry titles
+function processTextForLinks(text) {
+    if (!text || entries.length === 0) {
+        return text;
+    }
+    
+    let processedText = text;
+    
+    // Create a map of entry titles for case-insensitive matching
+    const entryTitles = new Map();
+    entries.forEach((entry, index) => {
+        entryTitles.set(entry.title.toLowerCase(), {
+            originalTitle: entry.title,
+            index: index
+        });
+    });
+    
+    // Sort titles by length (longest first) to avoid partial matches
+    const sortedTitles = Array.from(entryTitles.keys()).sort((a, b) => b.length - a.length);
+    
+    sortedTitles.forEach(lowerTitle => {
+        const entryInfo = entryTitles.get(lowerTitle);
+        const originalTitle = entryInfo.originalTitle;
+        const index = entryInfo.index;
+        
+        // Create a regex for case-insensitive whole word matching
+        const regex = new RegExp(`\\b${originalTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        
+        processedText = processedText.replace(regex, (match) => {
+            return `<a href="#" class="entry-link" data-entry-index="${index}">${match}</a>`;
+        });
+    });
+    
+    return processedText;
+}
+
+// Function to handle clicks on entry links
+function handleEntryLinkClick(event, entryIndex) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Find the corresponding entry in the sidebar
+    const entryElement = document.querySelector(`[data-index="${entryIndex}"]`);
+    if (entryElement) {
+        // Scroll to the entry
+        entryElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+        
+        // Add a highlight effect
+        entryElement.classList.add('highlight-entry');
+        setTimeout(() => {
+            entryElement.classList.remove('highlight-entry');
+        }, 2000);
+    }
+}
+
+// Function to update text content with live linking
+function updateTextWithLiveLinks(element, text) {
+    const processedHTML = processTextForLinks(text);
+    element.innerHTML = processedHTML;
+    
+    // Add click handlers to all entry links in this element
+    const links = element.querySelectorAll('.entry-link');
+    links.forEach(link => {
+        link.addEventListener('click', (event) => {
+            const entryIndex = parseInt(link.getAttribute('data-entry-index'));
+            handleEntryLinkClick(event, entryIndex);
+        });
     });
 }
 
@@ -948,7 +1118,9 @@ function openSystemPromptDialog() {
     document.getElementById('tense-select').value = systemPrompt.tense;
     document.getElementById('language-select').value = systemPrompt.language;
     document.getElementById('point-of-view-select').value = systemPrompt.pointOfView;
-    document.getElementById('character-select').value = systemPrompt.character;
+    
+    // Update character dropdown with current entries
+    updateCharacterDropdown();
     
     // Setup combobox functionality
     setupGenreCombobox();
@@ -961,6 +1133,16 @@ function closeSystemPromptDialog() {
     document.getElementById('system-prompt-overlay').classList.remove('show');
     // Hide dropdown when closing dialog
     document.getElementById('genre-dropdown').classList.remove('show');
+}
+
+function validateEntryTitle(newTitle, currentIndex = -1) {
+    // Check if title already exists (excluding current entry if editing)
+    for (let i = 0; i < entries.length; i++) {
+        if (i !== currentIndex && entries[i].title.toLowerCase() === newTitle.toLowerCase()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function saveSystemPromptDialog() {
@@ -1289,21 +1471,201 @@ function generatePromptForScene(chapterIndex, sceneIndex) {
     const chapter = story.getChapter(chapterIndex);
     const scene = chapter.getScene(sceneIndex);
     
-    // For now, we'll show an alert with the scene info
-    // This is where you'll later implement the actual prompt generation logic
-    const sceneInfo = `Chapter: ${chapterIndex + 1}, Scene: ${sceneIndex + 1}
-    Summary: ${scene.summary || 'No summary provided'}
-    Text: ${scene.text || 'No text provided'}`;
+    // Generate the actual prompt content
+    const promptText = generateFullPrompt(chapterIndex, sceneIndex);
     
-    console.log('Generating prompt for:', sceneInfo);
+    // Show the prompt in the dialog
+    showPromptDialog(promptText);
+}
+
+function generateFullPrompt(chapterIndex, sceneIndex) {
+    // Get the scene information
+    const chapter = story.getChapter(chapterIndex);
+    const scene = chapter.getScene(sceneIndex);
     
-    // Placeholder functionality - you can replace this with your prompt generation logic
-    alert(`Generate Prompt clicked for Chapter ${chapterIndex + 1}, Scene ${sceneIndex + 1}    
-        This is where you'll implement the prompt generation logic that uses:
-        - System Prompt settings
-        - Scene summary and text
-        - Character and story context
-        - All the entries (Characters, Locations, etc.)`);
+    let promptParts = [];
+    
+    // 1. System Prompt text from Settings
+    if (systemPrompt.systemPrompt && systemPrompt.systemPrompt.trim()) {
+        promptParts.push(`<system_prompt>\n    ${systemPrompt.systemPrompt}\n</system_prompt>`);
+    }
+    
+    // 2. Style Guide text from Settings
+    if (systemPrompt.styleGuide && systemPrompt.styleGuide.trim()) {
+        promptParts.push(`<style_guide>\n    ${systemPrompt.styleGuide}\n</style_guide>`);
+    }
+    
+    // 3. Story Genre instruction
+    if (systemPrompt.storyGenre && systemPrompt.storyGenre.trim()) {
+        promptParts.push(`<genre>${systemPrompt.storyGenre}</genre>`);
+    }
+    
+    // 4. Tense instruction
+    if (systemPrompt.tense && systemPrompt.tense.trim()) {
+        promptParts.push(`<tense>${systemPrompt.tense}</tense>`);
+    }
+    
+    // 5. Language instruction
+    if (systemPrompt.language && systemPrompt.language.trim()) {
+        promptParts.push(`<language>${systemPrompt.language}</language>`);
+    }
+    
+    // 6. Point of View instruction
+    if (systemPrompt.pointOfView && systemPrompt.pointOfView.trim()) {
+        promptParts.push(`<point_of_view>${systemPrompt.pointOfView}</point_of_view>`);
+    }
+    
+    // 7. Character point of view instruction
+    if (systemPrompt.character && systemPrompt.character.trim()) {
+        promptParts.push(`<character_perspective>${systemPrompt.character}</character_perspective>`);
+    }
+    
+    // 8. Collect all scene summaries up to the current scene
+    const previousScenes = [];
+    let allSceneSummaries = "";
+    
+    // Get all scenes from all chapters up to but not including the current scene
+    for (let chapterIdx = 0; chapterIdx <= chapterIndex; chapterIdx++) {
+        const currentChapter = story.getChapter(chapterIdx);
+        if (!currentChapter) continue;
+        
+        // For chapters before the current one, include all scenes
+        const maxSceneIdx = (chapterIdx < chapterIndex) ? currentChapter.scenes.length : sceneIndex;
+        
+        for (let sceneIdx = 0; sceneIdx < maxSceneIdx; sceneIdx++) {
+            const prevScene = currentChapter.getScene(sceneIdx);
+            if (prevScene && prevScene.summary && prevScene.summary.trim()) {
+                previousScenes.push({
+                    chapterNumber: chapterIdx + 1,
+                    sceneNumber: sceneIdx + 1,
+                    summary: prevScene.summary.trim()
+                });
+                allSceneSummaries += prevScene.summary.trim() + "\n";
+            }
+        }
+    }
+    
+    // Add current scene summary to the text to analyze
+    if (scene.summary && scene.summary.trim()) {
+        allSceneSummaries += scene.summary.trim() + "\n";
+    }
+    
+    // 9. Extract highlighted entries from all scene summaries
+    const highlightedEntries = extractHighlightedEntries(allSceneSummaries);
+    
+    // 10. Add highlighted entries information
+    if (highlightedEntries.length > 0) {
+        promptParts.push("<character_and_world_info>");
+        
+        highlightedEntries.forEach(entry => {
+            promptParts.push(`    <entry type="${entry.type}">`);
+            promptParts.push(`        <title>${entry.title}</title>`);
+            if (entry.description && entry.description.trim()) {
+                promptParts.push(`        <description>\n            ${entry.description}\n        </description>`);
+            }
+            if (entry.details && entry.details.length > 0) {
+                promptParts.push("        <details>");
+                entry.details.forEach(detail => {
+                    const tagName = detail.title.toLowerCase().replace(/\s+/g, '_');
+                    promptParts.push(`            <${tagName}>${detail.value}</${tagName}>`);
+                });
+                promptParts.push("        </details>");
+            }
+            promptParts.push("    </entry>");
+        });
+        
+        promptParts.push("</character_and_world_info>");
+    }
+    
+    // 11. Add previous scenes section if there are any
+    if (previousScenes.length > 0) {
+        promptParts.push("<previous_scenes>");
+        
+        previousScenes.forEach(sceneInfo => {
+            promptParts.push(`    <scene chapter="${sceneInfo.chapterNumber}" number="${sceneInfo.sceneNumber}">`);
+            promptParts.push(`        ${sceneInfo.summary}`);
+            promptParts.push("    </scene>");
+        });
+        
+        promptParts.push("</previous_scenes>");
+    }
+    
+    // 12. Add the current scene summary as the writing prompt
+    if (scene.summary && scene.summary.trim()) {
+        promptParts.push("<scene_to_write>");
+        promptParts.push(`    ${scene.summary}`);
+        promptParts.push("</scene_to_write>");
+    }
+    
+    // Join all parts with newlines
+    return promptParts.join("\n");
+}
+
+// Helper function to extract highlighted entries from text
+function extractHighlightedEntries(text) {
+    if (!text || entries.length === 0) return [];
+    
+    const foundEntries = new Set(); // Use Set to avoid duplicates
+    const highlightedEntries = [];
+    
+    // Create a map of entry titles for case-insensitive matching
+    const entryTitles = new Map();
+    entries.forEach((entry, index) => {
+        entryTitles.set(entry.title.toLowerCase(), { originalTitle: entry.title, index: index });
+    });
+    
+    // Sort titles by length (longest first) to avoid partial matches
+    const sortedTitles = Array.from(entryTitles.keys()).sort((a, b) => b.length - a.length);
+    
+    sortedTitles.forEach(lowerTitle => {
+        const entryInfo = entryTitles.get(lowerTitle);
+        const originalTitle = entryInfo.originalTitle;
+        const index = entryInfo.index;
+        
+        // Create a regex for case-insensitive whole word matching
+        const regex = new RegExp(`\\b${originalTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        
+        if (regex.test(text) && !foundEntries.has(index)) {
+            foundEntries.add(index);
+            highlightedEntries.push(entries[index]);
+        }
+    });
+    
+    return highlightedEntries;
+}
+
+
+
+function showPromptDialog(promptText) {
+    document.getElementById('prompt-text-display').value = promptText;
+    document.getElementById('prompt-dialog-overlay').classList.add('show');
+}
+
+function closePromptDialog() {
+    document.getElementById('prompt-dialog-overlay').classList.remove('show');
+}
+
+async function copyPromptToClipboard() {
+    const promptText = document.getElementById('prompt-text-display').value;
+    
+    try {
+        await navigator.clipboard.writeText(promptText);
+        
+        // Visual feedback
+        const copyBtn = document.getElementById('prompt-copy-btn');
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copy-success');
+        
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copy-success');
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy to clipboard');
+    }
 }
 
 // Drag and Drop Functions
