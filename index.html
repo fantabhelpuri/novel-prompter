@@ -163,6 +163,57 @@
         </div>
     </div>
     
+    <!-- Detail Dialog -->
+    <div id="detail-dialog-overlay" class="dialog-overlay">
+        <div class="detail-dialog">
+            <div class="dialog-header">Add Detail</div>
+            <div class="dialog-content">
+                <div class="dialog-field">
+                    <label for="detail-title-input">Title</label>
+                    <div class="combobox-container">
+                        <input type="text" id="detail-title-input" placeholder="Enter or select title..." autocomplete="off">
+                        <button type="button" class="combobox-dropdown-btn" id="detail-title-dropdown-btn">▼</button>
+                        <div class="combobox-dropdown" id="detail-title-dropdown">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dialog-field">
+                    <label>Value Type</label>
+                    <div class="radio-group">
+                        <input type="radio" id="value-type-text" name="value-type" value="text" checked>
+                        <label for="value-type-text">Text</label>
+                        
+                        <input type="radio" id="value-type-combobox" name="value-type" value="combobox">
+                        <label for="value-type-combobox">Combobox</label>
+                    </div>
+                </div>
+                
+                <div class="dialog-field" id="text-field-container">
+                    <label for="detail-text-input">Text</label>
+                    <input type="text" id="detail-text-input" placeholder="Enter text value...">
+                </div>
+                
+                <div class="dialog-field" id="combobox-field-container" style="display: none;">
+                    <label for="detail-option-input">Option</label>
+                    <div class="combobox-container">
+                        <input type="text" id="detail-option-input" placeholder="Enter or select option..." autocomplete="off">
+                        <button type="button" class="combobox-dropdown-btn" id="detail-option-dropdown-btn">▼</button>
+                        <div class="combobox-dropdown" id="detail-option-dropdown">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dialog-buttons">
+                <button class="dialog-button secondary" id="detail-dialog-cancel">Cancel</button>
+                <button class="dialog-button primary" id="detail-dialog-save">Add Detail</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Include scripts in order -->
     <script src="data.js"></script>
     <script src="app.js"></script>

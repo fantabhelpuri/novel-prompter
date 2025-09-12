@@ -1,8 +1,6 @@
 export option to export stories
-make detail type a combobox too and map details to particular types of entries
-when loading project and current is unsaved ask if you want to quit while not saved
-Save is acting as Save as right now
-Maybe add a save as
-Text on entries should be cut off
-
+when closing application, and there are unsaved changes, it should ask whether you should save
 Now, add a button next to the summary label in every scene. When clicked on the button, it should open a dialog which should have a scrollable text area.
+
+I'm working on an app that let's you create an outline of a book and then convert the outline into prompts that can be fed into an AI to get back prose. I call it novel prompter. It is an electron app. I've attached all the code files. Read all the files and prepare for further instructions
+

@@ -10,6 +10,10 @@ let systemPrompt = new SystemPrompt();
 let hasUnsavedChanges = false;
 let currentFilePath = null;
 let lastSavedState = null;
+let currentDetailIndex = -1; // -1 for new detail, >= 0 for editing existing
+let detailTitleOptions = []; // Populated from existing details
+let detailOptionValues = []; // Populated based on selected title
+let detailRegistry = new DetailRegistry();
 
 // Initialize with blank data (no sample data)
 function initializeApp() {
@@ -89,13 +93,29 @@ function initializeApp() {
         }
     });
 
+    // Add these event listeners in initializeApp function
+    document.getElementById('detail-dialog-save').addEventListener('click', saveDetailDialog);
+    document.getElementById('detail-dialog-cancel').addEventListener('click', closeDetailDialog);
+
+    // Radio button listeners
+    document.getElementById('value-type-text').addEventListener('change', showTextField);
+    document.getElementById('value-type-combobox').addEventListener('change', showComboboxField);
+
+    // Close detail dialog when clicking overlay
+    document.getElementById('detail-dialog-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDetailDialog();
+        }
+    });
+
 }
 
 function initializeBlankProject() {
     entries = [];
     story = new Story();
     systemPrompt = new SystemPrompt();
-    projectTitle = "Untitled Project";
+    detailRegistry = new DetailRegistry(); // Reset detail registry
+    projectTitle = 'Untitled Project';
     currentFilePath = null;
     hasUnsavedChanges = false;
     document.getElementById('project-title').value = projectTitle;
@@ -217,26 +237,19 @@ function saveEntryDialog() {
     if (!currentEditingEntry) return;
     
     // Update entry fields
-    currentEditingEntry.title = document.getElementById('dialog-type-input').value;
+    currentEditingEntry.title = document.getElementById('dialog-title').value;        // FIXED: Correct field
     currentEditingEntry.type = document.getElementById('dialog-type-input').value;
     currentEditingEntry.global = document.getElementById('dialog-global').checked;
     currentEditingEntry.description = document.getElementById('dialog-description').value;
     
-    // Update details
-    const detailItems = document.querySelectorAll('.detail-item');
-    currentEditingEntry.details = [];
-    detailItems.forEach(item => {
-        const titleInput = item.querySelector('.detail-title');
-        const valueInput = item.querySelector('.detail-value');
-        if (titleInput && valueInput && titleInput.value.trim() && valueInput.value.trim()) {
-            currentEditingEntry.addDetail(titleInput.value, valueInput.value);
-        }
-    });
+    // Details are now managed by the detail dialog system - don't touch them here!
+    // The details are already saved directly to currentEditingEntry.details when
+    // using the detail dialog (saveDetailDialog function)
     
     // Re-render entries and close dialog
     renderEntries();
     closeEntryDialog();
-    markAsChanged(); // Add this line
+    markAsChanged();
 }
 
 function renderDetailsInDialog() {
@@ -244,31 +257,282 @@ function renderDetailsInDialog() {
     detailsContainer.innerHTML = '';
     
     if (currentEditingEntry.details.length === 0) {
-        currentEditingEntry.addDetail("", "");
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = 'No details added yet.';
+        detailsContainer.appendChild(emptyState);
+        return;
     }
     
     currentEditingEntry.details.forEach((detail, index) => {
-        addDetailField(detail.title, detail.value);
+        const detailItem = document.createElement('div');
+        detailItem.className = 'detail-display-item';
+        detailItem.innerHTML = `
+            <div class="detail-info">
+                <strong>${detail.title}:</strong> ${detail.value}
+            </div>
+            <div class="detail-actions">
+                <button type="button" class="detail-edit">Edit</button>
+                <button type="button" class="detail-remove">Remove</button>
+            </div>
+        `;
+        
+        // Add edit functionality
+        detailItem.querySelector('.detail-edit').addEventListener('click', function() {
+            openDetailDialog(index);
+        });
+        
+        // Add remove functionality  
+        detailItem.querySelector('.detail-remove').addEventListener('click', function() {
+            currentEditingEntry.removeDetail(index);
+            renderDetailsInDialog();
+            markAsChanged();
+        });
+        
+        detailsContainer.appendChild(detailItem);
     });
 }
 
-function addDetailField(title = '', value = '') {
-    const detailsContainer = document.getElementById('details-container');
+// Modified addDetailField function - now opens dialog instead of creating fields
+function addDetailField() {
+    currentDetailIndex = -1; // New detail
+    openDetailDialog();
+}
+
+// New function to open detail dialog
+function openDetailDialog(detailIndex = -1) {
+    currentDetailIndex = detailIndex;
     
-    const detailItem = document.createElement('div');
-    detailItem.className = 'detail-item';
-    detailItem.innerHTML = `
-        <input type="text" class="detail-title" placeholder="Detail title" value="${title}">
-        <input type="text" class="detail-value" placeholder="Detail value" value="${value}">
-        <button type="button" class="detail-remove">Remove</button>
-    `;
+    // Reset form
+    document.getElementById('detail-title-input').value = '';
+    document.getElementById('detail-text-input').value = '';
+    document.getElementById('detail-option-input').value = '';
+    document.getElementById('value-type-text').checked = true;
+    showTextField();
     
-    // Add remove functionality
-    detailItem.querySelector('.detail-remove').addEventListener('click', function() {
-        detailItem.remove();
+    // If editing existing detail
+    if (detailIndex >= 0 && currentEditingEntry.details[detailIndex]) {
+        const detail = currentEditingEntry.details[detailIndex];
+        document.getElementById('detail-title-input').value = detail.title;
+        document.getElementById('detail-text-input').value = detail.value;
+    }
+    
+    // Populate dropdowns
+    populateDetailTitleDropdown();
+    populateDetailOptionDropdown();
+    
+    // Setup combobox functionality
+    setupDetailTitleCombobox();
+    setupDetailOptionCombobox();
+    
+    // Show dialog
+    document.getElementById('detail-dialog-overlay').classList.add('show');
+}
+
+// Function to close detail dialog
+function closeDetailDialog() {
+    document.getElementById('detail-dialog-overlay').classList.remove('show');
+    currentDetailIndex = -1;
+}
+
+// Function to save detail from dialog
+function saveDetailDialog() {
+    const title = document.getElementById('detail-title-input').value.trim();
+    const valueType = document.querySelector('input[name="value-type"]:checked').value;
+    let value = '';
+    
+    if (valueType === 'text') {
+        value = document.getElementById('detail-text-input').value.trim();
+    } else {
+        value = document.getElementById('detail-option-input').value.trim();
+    }
+    
+    if (!title || !value) {
+        alert('Please fill in both title and value fields.');
+        return;
+    }
+
+    // Register the detail type and value in the registry
+    detailRegistry.addDetailType(title, valueType);
+    if (valueType === 'combobox') {
+        detailRegistry.addValueToDetailType(title, value, valueType);
+    }
+
+    if (currentDetailIndex === -1) {
+        // Add new detail
+        currentEditingEntry.addDetail(title, value);
+    } else {
+        // Update existing detail
+        currentEditingEntry.updateDetail(currentDetailIndex, title, value);
+    }
+    
+    renderDetailsInDialog();
+    closeDetailDialog();
+    markAsChanged();
+}
+
+// Function to show/hide value input fields based on radio selection
+function showTextField() {
+    document.getElementById('text-field-container').style.display = 'block';
+    document.getElementById('combobox-field-container').style.display = 'none';
+}
+
+function showComboboxField() {
+    document.getElementById('text-field-container').style.display = 'none';
+    document.getElementById('combobox-field-container').style.display = 'block';
+}
+
+// Function to populate detail title dropdown
+function populateDetailTitleDropdown() {
+    const dropdown = document.getElementById('detail-title-dropdown');
+    dropdown.innerHTML = '';
+    
+    // Get titles from the detail registry
+    const titles = detailRegistry.getDetailTitles();
+    
+    titles.forEach(title => {
+        const option = document.createElement('div');
+        option.className = 'combobox-option';
+        option.textContent = title;
+        option.addEventListener('click', function() {
+            document.getElementById('detail-title-input').value = title;
+            dropdown.classList.remove('show');
+            
+            // Auto-select value type based on detail type
+            const detailType = detailRegistry.getDetailType(title);
+            if (detailType) {
+                if (detailType.valueType === 'combobox') {
+                    document.getElementById('value-type-combobox').checked = true;
+                    showComboboxField();
+                } else {
+                    document.getElementById('value-type-text').checked = true;
+                    showTextField();
+                }
+            }
+            
+            populateDetailOptionDropdown(); // Update options based on selected title
+        });
+        dropdown.appendChild(option);
+    });
+}
+
+// Function to populate detail option dropdown
+function populateDetailOptionDropdown() {
+    const dropdown = document.getElementById('detail-option-dropdown');
+    dropdown.innerHTML = '';
+    
+    const selectedTitle = document.getElementById('detail-title-input').value.trim();
+    if (!selectedTitle) return;
+    
+    // Get values from the detail registry
+    const values = detailRegistry.getPossibleValues(selectedTitle);
+    
+    values.forEach(value => {
+        const option = document.createElement('div');
+        option.className = 'combobox-option';
+        option.textContent = value;
+        option.addEventListener('click', function() {
+            document.getElementById('detail-option-input').value = value;
+            dropdown.classList.remove('show');
+        });
+        dropdown.appendChild(option);
+    });
+}
+
+// Setup combobox functionality for detail title
+function setupDetailTitleCombobox() {
+    const input = document.getElementById('detail-title-input');
+    const dropdown = document.getElementById('detail-title-dropdown');
+    const dropdownBtn = document.getElementById('detail-title-dropdown-btn');
+    
+    // Toggle dropdown when button is clicked
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
     });
     
-    detailsContainer.appendChild(detailItem);
+    // Filter options as user types
+    input.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterDetailTitleOptions(searchTerm);
+        dropdown.classList.add('show');
+        populateDetailOptionDropdown(); // Update options when title changes
+    });
+    
+    // Show dropdown when input is focused
+    input.addEventListener('focus', function() {
+        dropdown.classList.add('show');
+        filterDetailTitleOptions(this.value.toLowerCase());
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+// Setup combobox functionality for detail option
+function setupDetailOptionCombobox() {
+    const input = document.getElementById('detail-option-input');
+    const dropdown = document.getElementById('detail-option-dropdown');
+    const dropdownBtn = document.getElementById('detail-option-dropdown-btn');
+    
+    // Toggle dropdown when button is clicked
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    // Filter options as user types
+    input.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterDetailOptionOptions(searchTerm);
+        dropdown.classList.add('show');
+    });
+    
+    // Show dropdown when input is focused
+    input.addEventListener('focus', function() {
+        dropdown.classList.add('show');
+        filterDetailOptionOptions(this.value.toLowerCase());
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+// Filter functions for dropdowns
+function filterDetailTitleOptions(searchTerm) {
+    const dropdown = document.getElementById('detail-title-dropdown');
+    const options = dropdown.querySelectorAll('.combobox-option');
+    
+    options.forEach(option => {
+        const text = option.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+}
+
+function filterDetailOptionOptions(searchTerm) {
+    const dropdown = document.getElementById('detail-option-dropdown');
+    const options = dropdown.querySelectorAll('.combobox-option');
+    
+    options.forEach(option => {
+        const text = option.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
 }
 
 function renderStory() {
@@ -391,7 +655,7 @@ function updateScene(chapterIndex, sceneIndex, summary, text) {
 function saveProject() {
     const projectData = {
         title: projectTitle,
-        version: "1.0",
+        version: '1.0',
         created: new Date().toISOString(),
         lastModified: new Date().toISOString(),
         entries: entries,
@@ -406,7 +670,8 @@ function saveProject() {
             language: systemPrompt.language,
             pointOfView: systemPrompt.pointOfView,
             character: systemPrompt.character
-        }
+        },
+        detailRegistry: detailRegistry.toJSON() // Save detail registry
     };
 
     if (currentFilePath && isElectron()) {
@@ -427,7 +692,7 @@ function saveProject() {
 function saveAsProject() {
     const projectData = {
         title: projectTitle,
-        version: "1.0",
+        version: '1.0',
         created: new Date().toISOString(),
         lastModified: new Date().toISOString(),
         entries: entries,
@@ -442,7 +707,8 @@ function saveAsProject() {
             language: systemPrompt.language,
             pointOfView: systemPrompt.pointOfView,
             character: systemPrompt.character
-        }
+        },
+        detailRegistry: detailRegistry.toJSON() // Save detail registry
     };
     
     const filename = `${projectTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
@@ -567,28 +833,40 @@ function loadProjectData(projectData) {
     entries = [];
     story = new Story();
     systemPrompt = new SystemPrompt();
-    
+    detailRegistry = new DetailRegistry(); // Reset detail registry
+
     // Load project title
-    projectTitle = projectData.title || "Untitled Project";
+    projectTitle = projectData.title || 'Untitled Project';
     document.getElementById('project-title').value = projectTitle;
-    
+
+    // Load detail registry
+    if (projectData.detailRegistry) {
+        detailRegistry.fromJSON(projectData.detailRegistry);
+    }
+
     // Load entries (existing code remains the same)
     if (projectData.entries && Array.isArray(projectData.entries)) {
         projectData.entries.forEach(entryData => {
             const entry = new Entry(
-                entryData.title || "",
-                entryData.type || "",
+                entryData.title || '',
+                entryData.type || '',
                 entryData.global || false,
-                entryData.description || ""
+                entryData.description || ''
             );
-            
+
             // Load details
             if (entryData.details && Array.isArray(entryData.details)) {
                 entryData.details.forEach(detailData => {
-                    entry.addDetail(detailData.title || "", detailData.value || "");
+                    entry.addDetail(detailData.title || '', detailData.value || '');
+                    
+                    // Register the detail in the registry if not already present
+                    if (!detailRegistry.hasDetailType(detailData.title)) {
+                        detailRegistry.addDetailType(detailData.title, 'text');
+                    }
+                    detailRegistry.addValueToDetailType(detailData.title, detailData.value, 'text');
                 });
             }
-            
+
             entries.push(entry);
         });
     }
@@ -640,6 +918,17 @@ function loadProjectData(projectData) {
     
     // Clear file input
     document.getElementById('load-file-input').value = '';
+}
+
+function populateDetailRegistryFromExistingEntries() {
+    entries.forEach(entry => {
+        entry.details.forEach(detail => {
+            if (!detailRegistry.hasDetailType(detail.title)) {
+                detailRegistry.addDetailType(detail.title, 'text');
+            }
+            detailRegistry.addValueToDetailType(detail.title, detail.value, 'text');
+        });
+    });
 }
 
 // System Prompt Dialog Functions
@@ -1105,7 +1394,9 @@ function getCurrentProjectState() {
     return JSON.stringify({
         title: projectTitle,
         entries: entries,
-        story: { chapters: story.chapters },
+        story: {
+            chapters: story.chapters
+        },
         systemPrompt: {
             systemPrompt: systemPrompt.systemPrompt,
             styleGuide: systemPrompt.styleGuide,
@@ -1114,7 +1405,8 @@ function getCurrentProjectState() {
             language: systemPrompt.language,
             pointOfView: systemPrompt.pointOfView,
             character: systemPrompt.character
-        }
+        },
+        detailRegistry: detailRegistry.toJSON()
     });
 }
 

@@ -1,10 +1,133 @@
+// DetailRegistry class - manages detail types and their possible values
+class DetailRegistry {
+    constructor() {
+        this.detailTypes = new Map(); // Map<string, DetailType>
+    }
+
+    // Add or update a detail type
+    addDetailType(title, valueType = 'text', possibleValues = []) {
+        if (!this.detailTypes.has(title)) {
+            this.detailTypes.set(title, new DetailType(title, valueType, possibleValues));
+        } else {
+            // Update existing detail type
+            const existingType = this.detailTypes.get(title);
+            if (valueType === 'combobox' && possibleValues.length > 0) {
+                existingType.addPossibleValues(possibleValues);
+            }
+        }
+        return this.detailTypes.get(title);
+    }
+
+    // Add a value to an existing detail type
+    addValueToDetailType(title, value, valueType = 'text') {
+        if (!this.detailTypes.has(title)) {
+            this.addDetailType(title, valueType, valueType === 'combobox' ? [value] : []);
+        } else {
+            const detailType = this.detailTypes.get(title);
+            if (valueType === 'combobox') {
+                detailType.addPossibleValue(value);
+            }
+        }
+    }
+
+    // Get all detail type titles
+    getDetailTitles() {
+        return Array.from(this.detailTypes.keys()).sort();
+    }
+
+    // Get possible values for a detail type
+    getPossibleValues(title) {
+        const detailType = this.detailTypes.get(title);
+        return detailType ? detailType.getPossibleValues() : [];
+    }
+
+    // Get detail type info
+    getDetailType(title) {
+        return this.detailTypes.get(title);
+    }
+
+    // Check if a detail type exists
+    hasDetailType(title) {
+        return this.detailTypes.has(title);
+    }
+
+    // Get all detail types as object for serialization
+    toJSON() {
+        const result = {};
+        this.detailTypes.forEach((detailType, title) => {
+            result[title] = detailType.toJSON();
+        });
+        return result;
+    }
+
+    // Load from JSON data
+    fromJSON(data) {
+        this.detailTypes.clear();
+        if (data && typeof data === 'object') {
+            Object.keys(data).forEach(title => {
+                const typeData = data[title];
+                this.detailTypes.set(title, DetailType.fromJSON(typeData));
+            });
+        }
+    }
+}
+
+// DetailType class - represents a specific detail type with its configuration
+class DetailType {
+    constructor(title, valueType = 'text', possibleValues = []) {
+        this.title = title;
+        this.valueType = valueType; // 'text' or 'combobox'
+        this.possibleValues = new Set(possibleValues); // Set of possible values for combobox type
+    }
+
+    // Add possible values
+    addPossibleValues(values) {
+        values.forEach(value => this.addPossibleValue(value));
+    }
+
+    // Add a single possible value
+    addPossibleValue(value) {
+        if (value && value.trim()) {
+            this.possibleValues.add(value.trim());
+        }
+    }
+
+    // Get possible values as array
+    getPossibleValues() {
+        return Array.from(this.possibleValues).sort();
+    }
+
+    // Set value type
+    setValueType(valueType) {
+        this.valueType = valueType;
+    }
+
+    // Convert to JSON for serialization
+    toJSON() {
+        return {
+            title: this.title,
+            valueType: this.valueType,
+            possibleValues: this.getPossibleValues()
+        };
+    }
+
+    // Create from JSON data
+    static fromJSON(data) {
+        return new DetailType(
+            data.title || '',
+            data.valueType || 'text',
+            data.possibleValues || []
+        );
+    }
+}
+
 /**
  * Detail class - contains title and value fields
  */
 class Detail {
     constructor(title = '', value = '') {
-        this.title = title;  // text
-        this.value = value;  // text
+        this.title = title; // text
+        this.value = value; // text
     }
 
     // Method to update detail
@@ -304,12 +427,6 @@ class SystemPrompt {
 
 // Export classes for use in other modules (if using Node.js modules)
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        Detail,
-        Entry,
-        Scene,
-        Chapter,
-        Story,
-        SystemPrompt
-    };
+    module.exports = { Detail, Entry, Scene, Chapter, Story, SystemPrompt, DetailRegistry, DetailType };
 }
+

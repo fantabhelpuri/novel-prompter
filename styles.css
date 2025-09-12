@@ -618,3 +618,79 @@ body {
     justify-content: center;
     gap: 10px;
 }
+
+/* Detail Dialog Styles */
+.detail-dialog {
+    background: white;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Radio Button Group */
+.radio-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.radio-group input[type="radio"] {
+    width: auto;
+    margin-right: 5px;
+}
+
+.radio-group label {
+    font-weight: normal;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* Detail Display Items */
+.detail-display-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+}
+
+.detail-info {
+    flex: 1;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.detail-edit, .detail-remove {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.detail-edit {
+    background-color: #007bff;
+    color: white;
+}
+
+.detail-edit:hover {
+    background-color: #0056b3;
+}
+
+.detail-remove {
+    background-color: #dc3545;
+    color: white;
+}
+
+.detail-remove:hover {
+    background-color: #c82333;
+}
