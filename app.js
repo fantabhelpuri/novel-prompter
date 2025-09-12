@@ -317,7 +317,8 @@ function renderDetailsInDialog() {
         detailItem.className = 'detail-display-item';
         detailItem.innerHTML = `
             <div class="detail-info">
-                <strong>${detail.title}:</strong> ${detail.value}
+                <strong>${detail.title}</strong>
+                <div class="detail-value">${detail.value}</div>
             </div>
             <div class="detail-actions">
                 <button type="button" class="detail-edit">Edit</button>
@@ -330,7 +331,7 @@ function renderDetailsInDialog() {
             openDetailDialog(index);
         });
         
-        // Add remove functionality  
+        // Add remove functionality
         detailItem.querySelector('.detail-remove').addEventListener('click', function() {
             currentEditingEntry.removeDetail(index);
             renderDetailsInDialog();
@@ -1485,51 +1486,43 @@ function generateFullPrompt(chapterIndex, sceneIndex) {
     
     let promptParts = [];
     
-    // 1. System Prompt text from Settings
+    // 1-7. All existing prompt parts (system prompt, style guide, etc.)
     if (systemPrompt.systemPrompt && systemPrompt.systemPrompt.trim()) {
         promptParts.push(`<system_prompt>\n    ${systemPrompt.systemPrompt}\n</system_prompt>`);
     }
     
-    // 2. Style Guide text from Settings
     if (systemPrompt.styleGuide && systemPrompt.styleGuide.trim()) {
         promptParts.push(`<style_guide>\n    ${systemPrompt.styleGuide}\n</style_guide>`);
     }
     
-    // 3. Story Genre instruction
     if (systemPrompt.storyGenre && systemPrompt.storyGenre.trim()) {
         promptParts.push(`<genre>${systemPrompt.storyGenre}</genre>`);
     }
     
-    // 4. Tense instruction
     if (systemPrompt.tense && systemPrompt.tense.trim()) {
         promptParts.push(`<tense>${systemPrompt.tense}</tense>`);
     }
     
-    // 5. Language instruction
     if (systemPrompt.language && systemPrompt.language.trim()) {
         promptParts.push(`<language>${systemPrompt.language}</language>`);
     }
     
-    // 6. Point of View instruction
     if (systemPrompt.pointOfView && systemPrompt.pointOfView.trim()) {
         promptParts.push(`<point_of_view>${systemPrompt.pointOfView}</point_of_view>`);
     }
     
-    // 7. Character point of view instruction
     if (systemPrompt.character && systemPrompt.character.trim()) {
         promptParts.push(`<character_perspective>${systemPrompt.character}</character_perspective>`);
     }
     
-    // 8. Collect all scene summaries up to the current scene
+    // 8. Collect scene summaries and extract highlighted entries
     const previousScenes = [];
     let allSceneSummaries = "";
     
-    // Get all scenes from all chapters up to but not including the current scene
     for (let chapterIdx = 0; chapterIdx <= chapterIndex; chapterIdx++) {
         const currentChapter = story.getChapter(chapterIdx);
         if (!currentChapter) continue;
         
-        // For chapters before the current one, include all scenes
         const maxSceneIdx = (chapterIdx < chapterIndex) ? currentChapter.scenes.length : sceneIndex;
         
         for (let sceneIdx = 0; sceneIdx < maxSceneIdx; sceneIdx++) {
@@ -1545,19 +1538,32 @@ function generateFullPrompt(chapterIndex, sceneIndex) {
         }
     }
     
-    // Add current scene summary to the text to analyze
     if (scene.summary && scene.summary.trim()) {
         allSceneSummaries += scene.summary.trim() + "\n";
     }
     
-    // 9. Extract highlighted entries from all scene summaries
+    // 9. Get highlighted entries and merge with global entries
     const highlightedEntries = extractHighlightedEntries(allSceneSummaries);
+    const globalEntries = entries.filter(entry => entry.global);
+    const allRelevantEntries = new Map();
     
-    // 10. Add highlighted entries information
-    if (highlightedEntries.length > 0) {
+    // Add highlighted entries first
+    highlightedEntries.forEach(entry => {
+        allRelevantEntries.set(entry.title, entry);
+    });
+    
+    // Add global entries (ensures global entries are always included)
+    globalEntries.forEach(entry => {
+        allRelevantEntries.set(entry.title, entry);
+    });
+    
+    const finalEntries = Array.from(allRelevantEntries.values());
+    
+    // 10. Add character and world information with proper XML formatting
+    if (finalEntries.length > 0) {
         promptParts.push("<character_and_world_info>");
         
-        highlightedEntries.forEach(entry => {
+        finalEntries.forEach(entry => {
             promptParts.push(`    <entry type="${entry.type}">`);
             promptParts.push(`        <title>${entry.title}</title>`);
             if (entry.description && entry.description.trim()) {
@@ -1577,27 +1583,23 @@ function generateFullPrompt(chapterIndex, sceneIndex) {
         promptParts.push("</character_and_world_info>");
     }
     
-    // 11. Add previous scenes section if there are any
+    // 11-12. Previous scenes and current scene (same as before)
     if (previousScenes.length > 0) {
         promptParts.push("<previous_scenes>");
-        
         previousScenes.forEach(sceneInfo => {
             promptParts.push(`    <scene chapter="${sceneInfo.chapterNumber}" number="${sceneInfo.sceneNumber}">`);
             promptParts.push(`        ${sceneInfo.summary}`);
             promptParts.push("    </scene>");
         });
-        
         promptParts.push("</previous_scenes>");
     }
     
-    // 12. Add the current scene summary as the writing prompt
     if (scene.summary && scene.summary.trim()) {
         promptParts.push("<scene_to_write>");
         promptParts.push(`    ${scene.summary}`);
         promptParts.push("</scene_to_write>");
     }
     
-    // Join all parts with newlines
     return promptParts.join("\n");
 }
 

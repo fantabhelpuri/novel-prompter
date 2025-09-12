@@ -811,3 +811,30 @@ body {
     border: 2px solid #ffc107 !important;
     transition: all 0.3s ease;
 }
+
+/* Remove outermost scrollbar */
+html, body {
+    overflow: hidden;
+}
+
+/* Limit detail display text in Edit Entry dialog */
+.detail-display-item .detail-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.detail-display-item .detail-info strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.detail-display-item .detail-value {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+    max-height: 2.4em; /* 2 lines * 1.2 line-height */
+    color: #666;
+    font-size: 13px;
+}

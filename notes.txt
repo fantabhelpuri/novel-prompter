@@ -1,12 +1,9 @@
 export option to export stories
+New project option
 save and load point of view character in settings when project is loaded.
 when add entry open create entry dialog first instead of just creating new entry.
 Keep type empty instead of prepopulating it
 Description should have placeholder text instead of prefilling it with description
-if global entry, it always has to be included
-convert prompt to xml
-cut off detail text in add entry dialog preview
-remove outermost scrollbar
 
 I'm working on an app that let's you create an outline of a book and then convert the outline into prompts that can be fed into an AI to get back prose. I call it novel prompter. It is an electron app. I've attached all the code files. Read all the files and prepare for further instructions
 
