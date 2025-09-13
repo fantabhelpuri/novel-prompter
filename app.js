@@ -15,6 +15,83 @@ let detailTitleOptions = []; // Populated from existing details
 let detailOptionValues = []; // Populated based on selected title
 let detailRegistry = new DetailRegistry();
 let currentConfirmCallback = null;
+let isResizing = false;
+let currentResizer = null;
+let startX = 0;
+let startWidth = 0;
+// Global variable to store the current summary width percentage
+let summaryWidthPercentage = 25; // Default 25%
+
+function initializeResizers() {
+    // Find all vertical resizers and add event listeners
+    document.addEventListener('mousedown', handleResizerMouseDown);
+    document.addEventListener('mousemove', handleResizerMouseMove);
+    document.addEventListener('mouseup', handleResizerMouseUp);
+}
+
+function handleResizerMouseDown(e) {
+    if (e.target.classList.contains('vertical-resizer')) {
+        isResizing = true;
+        currentResizer = e.target;
+        startX = e.clientX;
+        
+        // Get the scene content container
+        const sceneContent = currentResizer.closest('.scene-content');
+        const summarySection = sceneContent.querySelector('.summary-section');
+        startWidth = summarySection.offsetWidth;
+        
+        // Add resizing class for visual feedback
+        document.body.classList.add('resizing');
+        
+        e.preventDefault();
+    }
+}
+
+function handleResizerMouseMove(e) {
+    if (!isResizing || !currentResizer) return;
+    
+    const deltaX = e.clientX - startX;
+    const sceneContent = currentResizer.closest('.scene-content');
+    const summarySection = sceneContent.querySelector('.summary-section');
+    
+    // Calculate new width
+    const newWidth = startWidth + deltaX;
+    const containerWidth = sceneContent.offsetWidth;
+    const newPercentage = Math.max(10, Math.min(80, (newWidth / containerWidth) * 100));
+    
+    // Update the global percentage
+    summaryWidthPercentage = newPercentage;
+    
+    // Apply to all scenes
+    updateAllSceneDividers();
+    
+    e.preventDefault();
+}
+
+function handleResizerMouseUp(e) {
+    if (isResizing) {
+        isResizing = false;
+        currentResizer = null;
+        document.body.classList.remove('resizing');
+    }
+}
+
+function updateAllSceneDividers() {
+    // Update all summary sections to use the new percentage
+    const summarySection = document.querySelectorAll('.summary-section');
+    summarySection.forEach(section => {
+        section.style.flexBasis = summaryWidthPercentage + '%';
+        section.style.minWidth = summaryWidthPercentage + '%';
+        section.style.maxWidth = summaryWidthPercentage + '%';
+    });
+}
+
+function createVerticalResizer() {
+    const resizer = document.createElement('div');
+    resizer.className = 'vertical-resizer';
+    resizer.title = 'Drag to resize';
+    return resizer;
+}
 
 // Initialize with blank data (no sample data)
 function initializeApp() {
@@ -136,6 +213,7 @@ function initializeApp() {
 
     document.getElementById('collapse-sidebar-btn').addEventListener('click', toggleSidebar);
 
+    initializeResizers();
 }
 
 function newProject() {
@@ -715,28 +793,31 @@ function renderStory() {
 
             const sceneContent = document.createElement('div');
             sceneContent.className = 'scene-content';
-
-            // Summary section (25% width)
+            
+            // Summary section (adjustable width)
             const summarySection = document.createElement('div');
             summarySection.className = 'scene-section summary-section';
-
+            summarySection.style.flexBasis = summaryWidthPercentage + '%';
+            summarySection.style.minWidth = summaryWidthPercentage + '%';
+            summarySection.style.maxWidth = summaryWidthPercentage + '%';
+            
             const summaryHeader = document.createElement('div');
             summaryHeader.className = 'scene-section-header';
-
+            
             const summaryLabel = document.createElement('span');
             summaryLabel.textContent = 'Summary';
-
-            const generatePromptBtn = document.createElement('button');
-            generatePromptBtn.className = 'generate-prompt-btn';
-            generatePromptBtn.textContent = 'Prompt';
-            generatePromptBtn.addEventListener('click', (e) => {
+            
+            const ideaPromptBtn = document.createElement('button');
+            ideaPromptBtn.className = 'generate-prompt-btn';
+            ideaPromptBtn.textContent = 'Idea Prompt';
+            ideaPromptBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                generatePromptForScene(chapterIndex, sceneIndex);
+                generateIdeaPromptForScene(chapterIndex, sceneIndex);
             });
-
+            
             summaryHeader.appendChild(summaryLabel);
-            summaryHeader.appendChild(generatePromptBtn);
-
+            summaryHeader.appendChild(ideaPromptBtn);
+            
             const summaryTextarea = document.createElement('textarea');
             summaryTextarea.className = 'scene-textarea';
             summaryTextarea.placeholder = 'Enter scene summary...';
@@ -796,15 +877,32 @@ function renderStory() {
             summarySection.appendChild(summaryHeader);
             summarySection.appendChild(summaryTextarea);
             summarySection.appendChild(summaryDisplay);
+            
+            // Create and add vertical resizer
+            const resizer = createVerticalResizer();
+            summarySection.appendChild(resizer);
 
-            // Text section (75% width) - keeping original functionality
+            // Text section (takes remaining space)
             const textSection = document.createElement('div');
             textSection.className = 'scene-section text-section';
 
             const textHeader = document.createElement('div');
             textHeader.className = 'scene-section-header';
-            textHeader.textContent = 'Text';
-
+            
+            const textLabel = document.createElement('span');
+            textLabel.textContent = 'Text';
+            
+            const generatePromptBtn = document.createElement('button');
+            generatePromptBtn.className = 'generate-prompt-btn';
+            generatePromptBtn.textContent = 'Generate Prompt';
+            generatePromptBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                generatePromptForScene(chapterIndex, sceneIndex);
+            });
+            
+            textHeader.appendChild(textLabel);
+            textHeader.appendChild(generatePromptBtn);
+            
             const textTextarea = document.createElement('textarea');
             textTextarea.className = 'scene-textarea';
             textTextarea.placeholder = 'Enter scene text...';
@@ -2119,6 +2217,115 @@ function toggleSidebar() {
         collapseBtn.textContent = '←';
         collapseBtn.title = 'Collapse Sidebar';
     }
+}
+
+// Add this new function for the Idea Prompt functionality
+function generateIdeaPromptForScene(chapterIndex, sceneIndex) {
+    const chapter = story.getChapter(chapterIndex);
+    const scene = chapter.getScene(sceneIndex);
+    
+    // Generate the idea brainstorming prompt
+    const ideaPromptText = generateIdeaBrainstormingPrompt(chapterIndex, sceneIndex);
+    
+    // Show the prompt in the dialog
+    showPromptDialog(ideaPromptText);
+}
+
+function generateIdeaBrainstormingPrompt(chapterIndex, sceneIndex) {
+    // Get the scene information
+    const chapter = story.getChapter(chapterIndex);
+    const scene = chapter.getScene(sceneIndex);
+    
+    let promptParts = [];
+    
+    // 1. Basic story context
+    if (systemPrompt.storyGenre && systemPrompt.storyGenre.trim()) {
+        promptParts.push(`<genre>${systemPrompt.storyGenre}</genre>`);
+    }
+    
+    if (systemPrompt.pointOfView && systemPrompt.pointOfView.trim()) {
+        promptParts.push(`<point_of_view>${systemPrompt.pointOfView}</point_of_view>`);
+    }
+    
+    if (systemPrompt.character && systemPrompt.character.trim()) {
+        promptParts.push(`<main_character>${systemPrompt.character}</main_character>`);
+    }
+    
+    // 2. Include global entries for world context
+    const globalEntries = entries.filter(entry => entry.global);
+    if (globalEntries.length > 0) {
+        promptParts.push("<world_context>");
+        
+        globalEntries.forEach(entry => {
+            promptParts.push(`    <entry type="${entry.type}">`);
+            promptParts.push(`        <title>${entry.title}</title>`);
+            if (entry.description && entry.description.trim()) {
+                promptParts.push(`        <description>${entry.description}</description>`);
+            }
+            if (entry.details && entry.details.length > 0) {
+                entry.details.forEach(detail => {
+                    promptParts.push(`        <${detail.title.toLowerCase().replace(/\s+/g, '_')}>${detail.value}</${detail.title.toLowerCase().replace(/\s+/g, '_')}>`);
+                });
+            }
+            promptParts.push("    </entry>");
+        });
+        
+        promptParts.push("</world_context>");
+    }
+    
+    // 3. Previous scenes for context
+    const previousScenes = [];
+    for (let chapterIdx = 0; chapterIdx <= chapterIndex; chapterIdx++) {
+        const currentChapter = story.getChapter(chapterIdx);
+        if (!currentChapter) continue;
+        
+        const maxSceneIdx = (chapterIdx < chapterIndex) ? currentChapter.scenes.length : sceneIndex;
+        
+        for (let sceneIdx = 0; sceneIdx < maxSceneIdx; sceneIdx++) {
+            const prevScene = currentChapter.getScene(sceneIdx);
+            if (prevScene && prevScene.summary && prevScene.summary.trim()) {
+                previousScenes.push({
+                    chapterNumber: chapterIdx + 1,
+                    sceneNumber: sceneIdx + 1,
+                    summary: prevScene.summary.trim()
+                });
+            }
+        }
+    }
+    
+    if (previousScenes.length > 0) {
+        promptParts.push("<previous_scenes>");
+        previousScenes.forEach(sceneInfo => {
+            promptParts.push(`    <scene chapter="${sceneInfo.chapterNumber}" number="${sceneInfo.sceneNumber}">`);
+            promptParts.push(`        ${sceneInfo.summary}`);
+            promptParts.push("    </scene>");
+        });
+        promptParts.push("</previous_scenes>");
+    }
+    
+    // 4. Current scene if it has content
+    if (scene.summary && scene.summary.trim()) {
+        promptParts.push("<current_scene_draft>");
+        promptParts.push(`    ${scene.summary}`);
+        promptParts.push("</current_scene_draft>");
+    }
+    
+    // 5. The brainstorming request
+    promptParts.push("<brainstorming_request>");
+    promptParts.push("    You are a creative writing assistant helping to brainstorm ideas for the next scene in this story.");
+    promptParts.push("    Based on the story context and previous scenes, please suggest:");
+    promptParts.push("    ");
+    promptParts.push("    1. **Scene Ideas**: 3-5 different directions this scene could take");
+    promptParts.push("    2. **Conflict Options**: Potential tensions, obstacles, or complications");
+    promptParts.push("    3. **Character Moments**: Opportunities for character development or revelation");
+    promptParts.push("    4. **Plot Advancement**: How this scene could move the story forward");
+    promptParts.push("    5. **Emotional Beats**: What emotions or atmosphere this scene could explore");
+    promptParts.push("    ");
+    promptParts.push("    Please provide creative, specific suggestions that fit the genre and tone.");
+    promptParts.push("    Focus on actionable ideas that could be developed into a full scene.");
+    promptParts.push("</brainstorming_request>");
+    
+    return promptParts.join("\n");
 }
 
 // Initialize the application when the page loads

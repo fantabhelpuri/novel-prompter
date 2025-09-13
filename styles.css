@@ -178,11 +178,18 @@ body {
 }
 
 .scene-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background-color: #f0f0f0;
     padding: 5px;
     font-weight: bold;
     border-bottom: 1px solid #333;
     font-size: 12px;
+}
+
+.scene-section-header span {
+    flex: 1;
 }
 
 .scene-textarea {
@@ -495,11 +502,12 @@ body {
     background-color: #007bff;
     color: white;
     border: none;
-    padding: 0px 12px;
+    padding: 2px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     transition: background-color 0.2s;
+    margin-left: 5px;
 }
 
 .generate-prompt-btn:hover {
@@ -930,4 +938,65 @@ html, body {
     flex: 1;
     height: calc(100vh - 50px);
     transition: all 0.3s ease;
+}
+
+/* Resizable divider styles */
+.scene-content {
+    display: flex;
+    min-height: 150px;
+    position: relative;
+}
+
+.scene-section {
+    position: relative;
+    border-right: none; /* Remove the original border */
+}
+
+.scene-section:last-child {
+    border-right: none;
+}
+
+/* Vertical resizer handle */
+.vertical-resizer {
+    width: 4px;
+    background-color: #ddd;
+    cursor: col-resize;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 10;
+    transition: background-color 0.2s;
+}
+
+.vertical-resizer:hover {
+    background-color: #007bff;
+}
+
+.vertical-resizer:active {
+    background-color: #0056b3;
+}
+
+/* Summary section with resizer */
+.scene-section.summary-section {
+    border-right: 1px solid #333;
+}
+
+/* Text section */
+.scene-section.text-section {
+    flex: 1;
+}
+
+/* When resizing, add a visual indicator */
+.resizing .vertical-resizer {
+    background-color: #0056b3;
+}
+
+.resizing * {
+    user-select: none;
+    pointer-events: none;
+}
+
+.resizing .vertical-resizer {
+    pointer-events: all;
 }
