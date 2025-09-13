@@ -24,8 +24,11 @@
 
     <div class="main-container">
         <!-- Left Panel - Entries -->
-        <div class="entries-panel">
-            <div class="entries-header">Entries:</div>
+        <div id="entries-panel" class="entries-panel">
+            <div class="entries-header">
+                <span>Entries:</span>
+                <button id="collapse-sidebar-btn" class="collapse-btn" title="Toggle Sidebar">←</button>
+            </div>
             <div id="entries-list"></div>
             <div class="controls">
                 <button class="add-button" id="add-entry-btn">Add Entry</button>
@@ -72,7 +75,7 @@
                 
                 <div class="dialog-field">
                     <label for="dialog-description">Description:</label>
-                    <textarea id="dialog-description"></textarea>
+                    <textarea id="dialog-description" placeholder="Enter entry description..."></textarea>
                 </div>
                 
                 <div class="details-section">

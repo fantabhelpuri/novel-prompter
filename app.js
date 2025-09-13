@@ -134,6 +134,8 @@ function initializeApp() {
         }
     });
 
+    document.getElementById('collapse-sidebar-btn').addEventListener('click', toggleSidebar);
+
 }
 
 function newProject() {
@@ -205,10 +207,40 @@ function addSampleStory() {
 }
 
 function addNewEntry() {
-    const entry = new Entry("New Entry", "Character", false, "Description...");
-    entries.push(entry);
-    renderEntries();
-    markAsChanged(); // Add this line
+    // Create a temporary entry with default values
+    const newEntry = new Entry("", "", false, "");
+    
+    // Open dialog for the new entry with index -1 (indicates new entry)
+    openEntryDialogForNew(newEntry);
+}
+
+function openEntryDialogForNew(entry) {
+    currentEditingEntry = entry;
+    currentEditingIndex = -1; // -1 indicates this is a new entry, not editing existing
+    
+    // Populate dialog fields with default/empty values
+    document.getElementById('dialog-title').value = entry.title;
+    document.getElementById('dialog-type-input').value = ""; // Changed: Keep type field blank
+    document.getElementById('dialog-global').checked = entry.global;
+    document.getElementById('dialog-description').value = ""; // Changed: Keep description blank
+    
+    // Clear details since this is a new entry
+    renderDetailsInDialog();
+    
+    // Show dialog
+    document.getElementById('dialog-overlay').classList.add('show');
+
+    // Populate entry type dropdown
+    populateEntryTypeDropdown();
+
+    // Setup entry type combobox functionality  
+    setupEntryTypeCombobox();
+    
+    // Focus on the title field for immediate editing
+    setTimeout(() => {
+        document.getElementById('dialog-title').focus();
+        document.getElementById('dialog-title').select();
+    }, 100);
 }
 
 function addNewChapter() {
@@ -299,6 +331,12 @@ function saveEntryDialog() {
     
     const newTitle = document.getElementById('dialog-title').value.trim();
     
+    // Validate title is not empty
+    if (!newTitle) {
+        alert('Entry title cannot be empty.');
+        return;
+    }
+    
     // Validate title uniqueness
     if (!validateEntryTitle(newTitle, currentEditingIndex)) {
         alert(`An entry with the title "${newTitle}" already exists. Please choose a different title.`);
@@ -310,6 +348,12 @@ function saveEntryDialog() {
     currentEditingEntry.type = document.getElementById('dialog-type-input').value;
     currentEditingEntry.global = document.getElementById('dialog-global').checked;
     currentEditingEntry.description = document.getElementById('dialog-description').value;
+    
+    // If this is a new entry (currentEditingIndex === -1), add it to the entries array
+    if (currentEditingIndex === -1) {
+        entries.push(currentEditingEntry);
+    }
+    // If it's an existing entry, it's already in the array and just gets updated above
     
     // Re-render entries and close dialog
     renderEntries();
@@ -2058,6 +2102,22 @@ function copyExportToClipboard() {
     } catch (err) {
         console.error('Failed to copy text: ', err);
         alert('Failed to copy to clipboard. Please select and copy manually.');
+    }
+}
+
+function toggleSidebar() {
+    const entriesPanel = document.getElementById('entries-panel');
+    const collapseBtn = document.getElementById('collapse-sidebar-btn');
+    
+    entriesPanel.classList.toggle('collapsed');
+    
+    // Update button text based on state
+    if (entriesPanel.classList.contains('collapsed')) {
+        collapseBtn.textContent = '→';
+        collapseBtn.title = 'Expand Sidebar';
+    } else {
+        collapseBtn.textContent = '←';
+        collapseBtn.title = 'Collapse Sidebar';
     }
 }
 

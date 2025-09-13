@@ -79,21 +79,6 @@ body {
     height: calc(100vh - 50px);
 }
 
-/* Left Panel - Entries */
-.entries-panel {
-    width: 300px;
-    background-color: white;
-    border: 2px solid #333;
-    overflow-y: auto;
-}
-
-.entries-header {
-    background-color: #ddd;
-    padding: 10px;
-    border-bottom: 1px solid #333;
-    font-weight: bold;
-}
-
 .entry-item {
     border: 1px solid #333;
     margin: 5px;
@@ -872,4 +857,77 @@ html, body {
     border-color: #007bff;
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Modified entries panel to support collapsing */
+.entries-panel {
+    width: 300px;
+    background-color: white;
+    border: 2px solid #333;
+    overflow-y: auto;
+    transition: width 0.3s ease, min-width 0.3s ease;
+    position: relative;
+}
+
+.entries-panel.collapsed {
+    width: 40px;
+    min-width: 40px;
+}
+
+/* Hide content when collapsed */
+.entries-panel.collapsed .entries-header span,
+.entries-panel.collapsed .entries-list,
+.entries-panel.collapsed .controls {
+    display: none;
+}
+
+/* Modified entries header to accommodate collapse button */
+.entries-header {
+    background-color: #ddd;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Collapse button styles */
+.collapse-btn {
+    background-color: #555;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    min-width: 24px;
+}
+
+.collapse-btn:hover {
+    background-color: #666;
+}
+
+.collapse-btn:active {
+    background-color: #444;
+}
+
+/* When collapsed, center the button and change arrow direction */
+.entries-panel.collapsed .entries-header {
+    justify-content: center;
+    padding: 10px 5px;
+}
+
+.entries-panel.collapsed .collapse-btn {
+    transform: rotate(180deg);
+}
+
+/* Optional: Add a subtle animation to the main container */
+.main-container {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 50px);
+    transition: all 0.3s ease;
 }
