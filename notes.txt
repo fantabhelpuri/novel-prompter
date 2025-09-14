@@ -1,5 +1,4 @@
 Tasks:
-remove primary colors
 
 Nice to have:
 

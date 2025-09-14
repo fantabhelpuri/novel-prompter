@@ -924,13 +924,13 @@ function renderStory() {
         chapterTitle.textContent = `Chapter ${chapterIndex + 1}`;
 
         const deleteChapterBtn = document.createElement('button');
-        deleteChapterBtn.className = 'danger-btn delete-chapter-btn';
+        deleteChapterBtn.className = 'delete-chapter-btn';
         deleteChapterBtn.title = 'Delete Chapter';
         deleteChapterBtn.dataset.chapterIndex = chapterIndex;
 
-        const deleteChapterIcon = document.createElement('i');
-        //deleteChapterIcon.className = 'icon';
-        deleteChapterIcon.textContent = 'Delete Chapter';
+        const deleteChapterIcon = document.createElement('a');
+        deleteChapterIcon.className = 'icon';
+        deleteChapterIcon.textContent = 'Delete';
         deleteChapterBtn.appendChild(deleteChapterIcon);
 
         chapterHeader.appendChild(chapterTitle);
@@ -952,14 +952,14 @@ function renderStory() {
             sceneTitle.textContent = `Scene ${sceneIndex + 1}`;
 
             const deleteSceneBtn = document.createElement('button');
-            deleteSceneBtn.className = 'danger-btn delete-scene-btn';
+            deleteSceneBtn.className = 'delete-scene-btn';
             deleteSceneBtn.title = 'Delete Scene';
             deleteSceneBtn.dataset.chapterIndex = chapterIndex;
             deleteSceneBtn.dataset.sceneIndex = sceneIndex;
 
-            const deleteSceneIcon = document.createElement('i');
-            //deleteSceneIcon.className = 'icon';
-            deleteSceneIcon.textContent = 'Delete Scene';
+            const deleteSceneIcon = document.createElement('a');
+            deleteSceneIcon.className = 'icon';
+            deleteSceneIcon.textContent = 'Delete';
             deleteSceneBtn.appendChild(deleteSceneIcon);
 
             sceneHeader.appendChild(sceneTitle);

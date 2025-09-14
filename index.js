@@ -16,7 +16,8 @@ function createWindow() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true
-        }
+        },
+        autoHideMenuBar: true
     });
 
     // Load the index.html of the app.

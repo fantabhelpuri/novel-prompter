@@ -1567,7 +1567,7 @@ body {
 .delete-chapter-btn,
 .delete-scene-btn {
     background: var(--danger);
-    color: white;
+    color:  white;
     border: none;
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
