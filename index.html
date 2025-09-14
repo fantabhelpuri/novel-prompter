@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Novel Prompter</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -107,6 +107,9 @@
                     <h2>Story Outline</h2>
                     <span class="stats" id="story-stats">0 chapters</span>
                 </div>
+            </div>            
+            <div class="chapters-container" id="chapters-container"></div>
+            <div class="controls">
                 <button class="primary-btn" id="add-chapter-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -114,8 +117,7 @@
                     </svg>
                     Add Chapter
                 </button>
-            </div>
-            <div class="chapters-container" id="chapters-container"></div>
+            </div>            
         </div>
     </div>
 
@@ -362,7 +364,7 @@
                     <input type="text" id="detail-text-input" placeholder="Enter text value...">
                 </div>
 
-                <div class="dialog-field" id="combobox-field-container" style="display: none;">
+                <div class="dialog-field" id="combobox-field-container" class="hidden">
                     <label for="detail-option-input">Option</label>
                     <div class="combobox-container">
                         <input type="text" id="detail-option-input" placeholder="Enter option...">
@@ -415,7 +417,7 @@
                 </button>
             </div>
             <div class="dialog-content">
-                <textarea id="prompt-text-display" readonly></textarea>
+                <textarea id="prompt-text-display"></textarea>
             </div>
             <div class="dialog-buttons">
                 <div class="button-group-right">

@@ -1,19 +1,14 @@
 Tasks:
-1. add delete scene and delete chapter buttons
-2. ensure margins and formatting are same for scene text and scene summary
-3. Move Add Chapter button from the top to the bottom like the add entry button.
-4. Reduce the margins or padding for the bottom bar which will have the Add Chapter and Add Entry buttons
-can't quit when unsaved changes 
-make text field for prompt editable
+entries number and chapter numbers are not updating
+remove error from npm console
+global entry alignment detail type alignment
 
 Nice to have:
 
-
 Problem:
-renaming a character should update references everywhere in the summaries?
 
 Stretch:
-
+renaming a character should update references everywhere in the summaries?
 
 Prompt:
 I'm working on an app that let's you create an outline of a book and then convert the outline into prompts that can be fed into an AI to get back prose. I call it novel prompter. It is an electron app. I've attached all the code files. Read all the files and prepare for further instructions

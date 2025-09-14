@@ -225,7 +225,7 @@ body {
   background: var(--accent-primary);
   color: var(--bg-primary);
   border: none;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm);
   border-radius: var(--radius-md);
   font-weight: 500;
   cursor: pointer;
@@ -234,7 +234,7 @@ body {
   gap: var(--spacing-sm);
   transition: all var(--transition-fast);
   font-size: 14px;
-  min-height: 36px;
+  min-height: 24px;
 }
 
 .primary-btn:hover {
@@ -336,7 +336,7 @@ body {
 }
 
 .entries-header {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   border-bottom: 1px solid var(--border-primary);
   display: flex;
   justify-content: space-between;
@@ -485,7 +485,7 @@ body {
 }
 
 .controls {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   border-top: 1px solid var(--border-primary);
   background: var(--bg-primary);
 }
@@ -500,7 +500,7 @@ body {
 }
 
 .story-header {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-sm);
   border-bottom: 1px solid var(--border-primary);
   display: flex;
   justify-content: space-between;
@@ -589,9 +589,9 @@ body {
 }
 
 .scene-section.summary-section {
-  flex: 0 0 25%;
-  min-width: 25%;
-  max-width: 25%;
+  flex: 0 0 35%;
+  min-width: 35%;
+  max-width: 35%;
   border-right: 1px solid var(--border-primary);
 }
 
@@ -611,6 +611,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 40px; /* Ensure consistent header height */
 }
 
 .generate-prompt-btn {
@@ -638,6 +639,7 @@ body {
   flex: 1;
   border: none;
   padding: var(--spacing-md);
+  margin: 0; /* Explicitly set margin to 0 */
   resize: none;
   font-family: inherit;
   font-size: 14px;
@@ -646,6 +648,7 @@ body {
   color: var(--text-primary);
   outline: none;
   transition: all var(--transition-fast);
+  box-sizing: border-box; /* Ensure consistent box model */
 }
 
 .scene-textarea:focus {
@@ -654,6 +657,32 @@ body {
 
 .scene-textarea::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Ensure both summary and text sections have identical styling */
+.summary-section .scene-textarea,
+.text-section .scene-textarea {
+  padding: var(--spacing-md);
+  margin: 0;
+  border: none;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+/* Additional consistency rules for scene layout */
+.scene-content .scene-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.scene-content .scene-section-header {
+  flex-shrink: 0;
+  min-height: 40px; /* Ensure consistent header height */
+}
+
+.scene-content .scene-textarea {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Vertical Resizer */
@@ -701,6 +730,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--spacing-lg); /* Add padding for mobile responsiveness */
 }
 
 @keyframes fadeIn {
@@ -728,13 +758,66 @@ body {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
-  max-width: 90vw;
+  max-width: min(90vw, 800px); /* Ensure it doesn't exceed viewport */
   max-height: 90vh;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   animation: slideIn var(--transition-normal);
   display: flex;
   flex-direction: column;
+  margin: auto; /* Additional centering fallback */
+  position: relative; /* Ensure it's positioned relative to the flex container */
+}
+
+/* Specific Dialog Sizes - Updated to work with centering */
+.entry-dialog {
+  width: min(600px, 90vw);
+}
+
+.system-prompt-dialog {
+  width: min(700px, 90vw);
+}
+
+.detail-dialog {
+  width: min(500px, 90vw);
+}
+
+.confirmation-dialog {
+  width: min(400px, 90vw);
+}
+
+.prompt-dialog {
+  width: min(800px, 90vw);
+}
+
+.export-dialog {
+  width: min(900px, 90vw);
+}
+
+.options-dialog {
+  width: min(350px, 90vw);
+}
+
+/* Mobile responsiveness improvement */
+@media (max-width: 768px) {
+  .dialog-overlay.show {
+    padding: var(--spacing-sm);
+  }
+  
+  .dialog {
+    max-width: calc(100vw - 2 * var(--spacing-sm));
+    max-height: calc(100vh - 2 * var(--spacing-sm));
+  }
+  
+  .entry-dialog,
+  .system-prompt-dialog,
+  .detail-dialog,
+  .confirmation-dialog,
+  .prompt-dialog,
+  .export-dialog,
+  .options-dialog {
+    width: 100%;
+  }
 }
 
 .dialog-header {
@@ -773,10 +856,12 @@ body {
   color: var(--text-primary);
 }
 
+/* Ensure dialog content is properly contained */
 .dialog-content {
   padding: var(--spacing-lg);
   overflow-y: auto;
   flex: 1;
+  min-height: 0; /* Allow flex shrinking */
 }
 
 .dialog-buttons {
@@ -1309,7 +1394,8 @@ body {
 /* Large textarea styles for prompts and exports */
 .prompt-dialog textarea,
 .export-dialog textarea {
-  min-height: 400px;
+  min-height:380px;
+  width: 100%;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.5;
@@ -1423,4 +1509,59 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+/* CSP-compliant classes for show/hide functionality */
+.hidden {
+  display: none !important;
+}
+
+.show {
+  display: block !important;
+}
+
+.flex-show {
+  display: flex !important;
+}
+
+/* Width setting classes for summary sections */
+.summary-width-10 { flex-basis: 10%; min-width: 10%; max-width: 10%; }
+.summary-width-15 { flex-basis: 15%; min-width: 15%; max-width: 15%; }
+.summary-width-20 { flex-basis: 20%; min-width: 20%; max-width: 20%; }
+.summary-width-25 { flex-basis: 25%; min-width: 25%; max-width: 25%; }
+.summary-width-30 { flex-basis: 30%; min-width: 30%; max-width: 30%; }
+.summary-width-35 { flex-basis: 35%; min-width: 35%; max-width: 35%; }
+.summary-width-40 { flex-basis: 40%; min-width: 40%; max-width: 40%; }
+.summary-width-45 { flex-basis: 45%; min-width: 45%; max-width: 45%; }
+.summary-width-50 { flex-basis: 50%; min-width: 50%; max-width: 50%; }
+.summary-width-55 { flex-basis: 55%; min-width: 55%; max-width: 55%; }
+.summary-width-60 { flex-basis: 60%; min-width: 60%; max-width: 60%; }
+.summary-width-65 { flex-basis: 65%; min-width: 65%; max-width: 65%; }
+.summary-width-70 { flex-basis: 70%; min-width: 70%; max-width: 70%; }
+.summary-width-75 { flex-basis: 75%; min-width: 75%; max-width: 75%; }
+.summary-width-80 { flex-basis: 80%; min-width: 80%; max-width: 80%; }
+
+/* Status message styles */
+.status-success {
+  background-color: #d4edda !important;
+  color: #155724 !important;
+  border: 1px solid #c3e6cb !important;
+}
+
+.status-error {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  border: 1px solid #f5c6cb !important;
+}
+
+.status-warning {
+  background-color: #fff3cd !important;
+  color: #856404 !important;
+  border: 1px solid #ffeaa7 !important;
+}
+
+.status-info {
+  background-color: #d1ecf1 !important;
+  color: #0c5460 !important;
+  border: 1px solid #bee5eb !important;
 }

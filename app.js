@@ -20,7 +20,18 @@ let currentResizer = null;
 let startX = 0;
 let startWidth = 0;
 // Global variable to store the current summary width percentage
-let summaryWidthPercentage = 25; // Default 25%
+let summaryWidthPercentage = loadSummaryWidthSetting(); // Load from application settings
+
+// Load summary width setting from localStorage
+function loadSummaryWidthSetting() {
+    const savedWidth = localStorage.getItem('summaryWidthPercentage');
+    return savedWidth ? parseFloat(savedWidth) : 35; // Default 35%
+}
+
+// Save summary width setting to localStorage
+function saveSummaryWidthSetting(percentage) {
+    localStorage.setItem('summaryWidthPercentage', percentage.toString());
+}
 
 function initializeResizers() {
     // Find all vertical resizers and add event listeners
@@ -61,7 +72,10 @@ function handleResizerMouseMove(e) {
     
     // Update the global percentage
     summaryWidthPercentage = newPercentage;
-    
+
+    // Save the setting to localStorage
+    saveSummaryWidthSetting(newPercentage);
+
     // Apply to all scenes
     updateAllSceneDividers();
     
@@ -77,13 +91,23 @@ function handleResizerMouseUp(e) {
 }
 
 function updateAllSceneDividers() {
-    // Update all summary sections to use the new percentage
+    // Update all summary sections to use the new percentage with CSS classes
     const summarySection = document.querySelectorAll('.summary-section');
+    const widthClass = getSummaryWidthClass(summaryWidthPercentage);
+    
     summarySection.forEach(section => {
-        section.style.flexBasis = summaryWidthPercentage + '%';
-        section.style.minWidth = summaryWidthPercentage + '%';
-        section.style.maxWidth = summaryWidthPercentage + '%';
+        // Remove all existing width classes
+        section.className = section.className.replace(/summary-width-\d+/g, '');
+        // Add the new width class
+        section.classList.add(widthClass);
     });
+}
+
+// Helper function to get the appropriate width class
+function getSummaryWidthClass(percentage) {
+    const roundedPercentage = Math.round(percentage / 5) * 5; // Round to nearest 5
+    const clampedPercentage = Math.max(10, Math.min(80, roundedPercentage));
+    return `summary-width-${clampedPercentage}`;
 }
 
 function createVerticalResizer() {
@@ -112,6 +136,15 @@ function initializeApp() {
     // Add event listeners for dialog
     document.getElementById('dialog-save').addEventListener('click', saveEntryDialog);
     document.getElementById('dialog-cancel').addEventListener('click', closeEntryDialog);
+    document.getElementById('dialog-close').addEventListener('click', closeEntryDialog);
+
+    // Close system prompt dialog when clicking overlay
+    document.getElementById('dialog-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEntryDialog();
+        }
+    });
+
     document.getElementById('add-detail-btn').addEventListener('click', addDetailField);
     
     // Add event listeners for save/load
@@ -134,6 +167,7 @@ function initializeApp() {
     document.getElementById('system-prompt-btn').addEventListener('click', openSystemPromptDialog);
     document.getElementById('system-prompt-save').addEventListener('click', saveSystemPromptDialog);
     document.getElementById('system-prompt-cancel').addEventListener('click', closeSystemPromptDialog);
+    document.getElementById('system-prompt-close').addEventListener('click', closeSystemPromptDialog);
 
     // Close system prompt dialog when clicking overlay
     document.getElementById('system-prompt-overlay').addEventListener('click', function(e) {
@@ -168,12 +202,13 @@ function initializeApp() {
     // Add beforeunload listener to warn about unsaved changes
     window.addEventListener('beforeunload', function(e) {
         if (hasUnsavedChanges) {
+            // Show custom confirmation dialog instead of browser default
             e.preventDefault();
-            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-            return e.returnValue;
+            showUnsavedChangesDialog();
+            return false;
         }
     });
-
+    
     // Add these event listeners in initializeApp function
     document.getElementById('detail-dialog-save').addEventListener('click', saveDetailDialog);
     document.getElementById('detail-dialog-cancel').addEventListener('click', closeDetailDialog);
@@ -225,16 +260,32 @@ function initializeApp() {
     });
 
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-chapter-btn')) {
-            const chapterIndex = parseInt(e.target.dataset.chapterIndex);
+        const chapterBtn = e.target.closest('.delete-chapter-btn');
+        if (chapterBtn) {
+          const chapterIndex = parseInt(chapterBtn.dataset.chapterIndex, 10);
+          if (!Number.isNaN(chapterIndex)) {
             deleteChapter(chapterIndex);
-        } else if (e.target.classList.contains('delete-scene-btn')) {
-            const chapterIndex = parseInt(e.target.dataset.chapterIndex);
-            const sceneIndex = parseInt(e.target.dataset.sceneIndex);
+          }
+          return;
+        }
+      
+        const sceneBtn = e.target.closest('.delete-scene-btn');
+        if (sceneBtn) {
+          const chapterIndex = parseInt(sceneBtn.dataset.chapterIndex, 10);
+          const sceneIndex = parseInt(sceneBtn.dataset.sceneIndex, 10);
+          if (!Number.isNaN(chapterIndex) && !Number.isNaN(sceneIndex)) {
             deleteScene(chapterIndex, sceneIndex);
+          }
+          return;
         }
     });
-    
+
+    // Load saved application settings
+    loadSavedTheme();
+
+    // Apply saved summary width to initial layout
+    updateAllSceneDividers();
+
     initializeResizers();
 }
 
@@ -677,13 +728,13 @@ function saveDetailDialog() {
 
 // Function to show/hide value input fields based on radio selection
 function showTextField() {
-    document.getElementById('text-field-container').style.display = 'block';
-    document.getElementById('combobox-field-container').style.display = 'none';
+    document.getElementById('text-field-container').classList.remove('hidden');
+    document.getElementById('combobox-field-container').classList.add('hidden');
 }
 
 function showComboboxField() {
-    document.getElementById('text-field-container').style.display = 'none';
-    document.getElementById('combobox-field-container').style.display = 'block';
+    document.getElementById('text-field-container').classList.add('hidden');
+    document.getElementById('combobox-field-container').classList.remove('hidden');
 }
 
 // Function to populate detail title dropdown
@@ -818,9 +869,9 @@ function filterDetailTitleOptions(searchTerm) {
     options.forEach(option => {
         const text = option.textContent.toLowerCase();
         if (text.includes(searchTerm)) {
-            option.style.display = 'block';
+            option.classList.remove('hidden');
         } else {
-            option.style.display = 'none';
+            option.classList.add('hidden');
         }
     });
 }
@@ -832,9 +883,9 @@ function filterDetailOptionOptions(searchTerm) {
     options.forEach(option => {
         const text = option.textContent.toLowerCase();
         if (text.includes(searchTerm)) {
-            option.style.display = 'block';
+            option.classList.remove('hidden');
         } else {
-            option.style.display = 'none';
+            option.classList.add('hidden');
         }
     });
 }
@@ -857,12 +908,23 @@ function renderStory() {
 
         const chapterHeader = document.createElement('div');
         chapterHeader.className = 'chapter-header';
-        chapterHeader.innerHTML = `
-            <span>Chapter ${chapterIndex + 1}</span>
-            <button class="danger-btn delete-chapter-btn" onclick="deleteChapter(${chapterIndex})" title="Delete Chapter">
-                <i class="icon">🗑</i>
-            </button>
-        `;
+
+        // Replace innerHTML with createElement
+        const chapterTitle = document.createElement('span');
+        chapterTitle.textContent = `Chapter ${chapterIndex + 1}`;
+
+        const deleteChapterBtn = document.createElement('button');
+        deleteChapterBtn.className = 'danger-btn delete-chapter-btn';
+        deleteChapterBtn.title = 'Delete Chapter';
+        deleteChapterBtn.dataset.chapterIndex = chapterIndex;
+
+        const deleteChapterIcon = document.createElement('i');
+        //deleteChapterIcon.className = 'icon';
+        deleteChapterIcon.textContent = 'Delete Chapter';
+        deleteChapterBtn.appendChild(deleteChapterIcon);
+
+        chapterHeader.appendChild(chapterTitle);
+        chapterHeader.appendChild(deleteChapterBtn);
         chapterDiv.appendChild(chapterHeader);
 
         const scenesContainer = document.createElement('div');
@@ -874,30 +936,42 @@ function renderStory() {
 
             const sceneHeader = document.createElement('div');
             sceneHeader.className = 'scene-header';
-            sceneHeader.innerHTML = `
-                <span>Scene ${sceneIndex + 1}</span>
-                <button class="danger-btn delete-scene-btn" onclick="deleteScene(${chapterIndex}, ${sceneIndex})" title="Delete Scene">
-                    <i class="icon">🗑</i>
-                </button>
-            `;
+
+            // Replace innerHTML with createElement
+            const sceneTitle = document.createElement('span');
+            sceneTitle.textContent = `Scene ${sceneIndex + 1}`;
+
+            const deleteSceneBtn = document.createElement('button');
+            deleteSceneBtn.className = 'danger-btn delete-scene-btn';
+            deleteSceneBtn.title = 'Delete Scene';
+            deleteSceneBtn.dataset.chapterIndex = chapterIndex;
+            deleteSceneBtn.dataset.sceneIndex = sceneIndex;
+
+            const deleteSceneIcon = document.createElement('i');
+            //deleteSceneIcon.className = 'icon';
+            deleteSceneIcon.textContent = 'Delete Scene';
+            deleteSceneBtn.appendChild(deleteSceneIcon);
+
+            sceneHeader.appendChild(sceneTitle);
+            sceneHeader.appendChild(deleteSceneBtn);
             sceneDiv.appendChild(sceneHeader);
 
             const sceneContent = document.createElement('div');
             sceneContent.className = 'scene-content';
-            
+
             // Summary section (adjustable width)
             const summarySection = document.createElement('div');
             summarySection.className = 'scene-section summary-section';
             summarySection.style.flexBasis = summaryWidthPercentage + '%';
             summarySection.style.minWidth = summaryWidthPercentage + '%';
             summarySection.style.maxWidth = summaryWidthPercentage + '%';
-            
+
             const summaryHeader = document.createElement('div');
             summaryHeader.className = 'scene-section-header';
-            
+
             const summaryLabel = document.createElement('span');
             summaryLabel.textContent = 'Summary';
-            
+
             const ideaPromptBtn = document.createElement('button');
             ideaPromptBtn.className = 'generate-prompt-btn';
             ideaPromptBtn.textContent = 'Idea Prompt';
@@ -905,39 +979,39 @@ function renderStory() {
                 e.stopPropagation();
                 generateIdeaPromptForScene(chapterIndex, sceneIndex);
             });
-            
+
             summaryHeader.appendChild(summaryLabel);
             summaryHeader.appendChild(ideaPromptBtn);
-            
+
             const summaryTextarea = document.createElement('textarea');
             summaryTextarea.className = 'scene-textarea';
             summaryTextarea.placeholder = 'Enter scene summary...';
             summaryTextarea.value = scene.summary;
-            
+
             // Create a display div for showing links
             const summaryDisplay = document.createElement('div');
-            summaryDisplay.className = 'scene-display';
-            summaryDisplay.style.display = 'none';
-            
+            summaryDisplay.className = 'scene-textarea';
+            summaryDisplay.classList.add('hidden');
+
             let isEditingMode = true;
-            
+
             // Function to toggle between edit and display mode
             function toggleMode() {
                 if (isEditingMode) {
                     // Switch to display mode
-                    summaryTextarea.style.display = 'none';
-                    summaryDisplay.style.display = 'block';
+                    summaryTextarea.classList.add('hidden');
+                    summaryDisplay.classList.remove('hidden');
                     updateTextWithLiveLinks(summaryDisplay, summaryTextarea.value);
                     isEditingMode = false;
                 } else {
                     // Switch to edit mode
-                    summaryTextarea.style.display = 'block';
-                    summaryDisplay.style.display = 'none';
+                    summaryTextarea.classList.remove('hidden');
+                    summaryDisplay.classList.add('hidden');
                     isEditingMode = true;
                     summaryTextarea.focus();
                 }
             }
-            
+
             // Event handlers for the textarea
             summaryTextarea.addEventListener('blur', () => {
                 // Only switch to display mode if there's text
@@ -950,16 +1024,16 @@ function renderStory() {
                     }, 100);
                 }
             });
-            
+
             summaryTextarea.addEventListener('change', function() {
                 updateScene(chapterIndex, sceneIndex, this.value, null);
             });
-            
+
             // Event handler for display div
             summaryDisplay.addEventListener('click', () => {
                 toggleMode();
             });
-            
+
             // Initialize display if there's content
             if (scene.summary.trim()) {
                 toggleMode();
@@ -968,7 +1042,7 @@ function renderStory() {
             summarySection.appendChild(summaryHeader);
             summarySection.appendChild(summaryTextarea);
             summarySection.appendChild(summaryDisplay);
-            
+
             // Create and add vertical resizer
             const resizer = createVerticalResizer();
             summarySection.appendChild(resizer);
@@ -979,10 +1053,10 @@ function renderStory() {
 
             const textHeader = document.createElement('div');
             textHeader.className = 'scene-section-header';
-            
+
             const textLabel = document.createElement('span');
             textLabel.textContent = 'Text';
-            
+
             const generatePromptBtn = document.createElement('button');
             generatePromptBtn.className = 'generate-prompt-btn';
             generatePromptBtn.textContent = 'Generate Prompt';
@@ -990,10 +1064,10 @@ function renderStory() {
                 e.stopPropagation();
                 generatePromptForScene(chapterIndex, sceneIndex);
             });
-            
+
             textHeader.appendChild(textLabel);
             textHeader.appendChild(generatePromptBtn);
-            
+
             const textTextarea = document.createElement('textarea');
             textTextarea.className = 'scene-textarea';
             textTextarea.placeholder = 'Enter scene text...';
@@ -1566,9 +1640,9 @@ function filterGenreOptions(searchTerm) {
     options.forEach(option => {
         const text = option.textContent.toLowerCase();
         if (text.includes(searchTerm)) {
-            option.style.display = 'block';
+            option.classList.remove('hidden');
         } else {
-            option.style.display = 'none';
+            option.classList.add('hidden');
         }
     });
 }
@@ -1581,7 +1655,8 @@ function populateEntryTypeDropdown() {
         const option = document.createElement('div');
         option.className = 'combobox-option';
         option.textContent = type;
-        option.addEventListener('click', function() {
+        option.addEventListener('click', function(e) {
+            e.stopPropagation();
             document.getElementById('dialog-type-input').value = type;
             dropdown.classList.remove('show');
         });
@@ -1593,6 +1668,7 @@ function setupEntryTypeCombobox() {
     const input = document.getElementById('dialog-type-input');
     const dropdown = document.getElementById('type-dropdown');
     const dropdownBtn = document.getElementById('type-dropdown-btn');
+    const container = document.querySelector('.combobox-container');
     
     // Remove existing event listeners to avoid duplicates
     const newInput = input.cloneNode(true);
@@ -1606,10 +1682,12 @@ function setupEntryTypeCombobox() {
     
     // Toggle dropdown when button is clicked
     freshDropdownBtn.addEventListener('click', function(e) {
+        e.preventDefault();
         e.stopPropagation();
         dropdown.classList.toggle('show');
         if (dropdown.classList.contains('show')) {
             filterEntryTypeOptions('');
+            freshInput.focus();
         }
     });
     
@@ -1617,7 +1695,9 @@ function setupEntryTypeCombobox() {
     freshInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
         filterEntryTypeOptions(searchTerm);
-        dropdown.classList.add('show');
+        if (!dropdown.classList.contains('show')) {
+            dropdown.classList.add('show');
+        }
     });
     
     // Show dropdown when input is focused
@@ -1626,16 +1706,22 @@ function setupEntryTypeCombobox() {
         filterEntryTypeOptions(this.value.toLowerCase());
     });
     
-    // Hide dropdown when clicking outside
+    // Prevent dropdown from closing when clicking inside it
+    dropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Hide dropdown when clicking outside - use a more reliable method
     document.addEventListener('click', function(e) {
-        if (!freshInput.contains(e.target) && !freshDropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        // Check if the click is outside the entire combobox container
+        if (!container.contains(e.target)) {
             dropdown.classList.remove('show');
         }
     });
     
     // Handle keyboard navigation
     freshInput.addEventListener('keydown', function(e) {
-        const options = dropdown.querySelectorAll('.combobox-option:not([style*="display: none"])');
+        const options = dropdown.querySelectorAll('.combobox-option:not(.hidden)');
         let highlighted = dropdown.querySelector('.combobox-option.highlighted');
         
         if (e.key === 'ArrowDown') {
@@ -1693,8 +1779,10 @@ function filterEntryTypeOptions(searchTerm) {
         const text = option.textContent.toLowerCase();
         if (text.includes(searchTerm)) {
             option.style.display = 'block';
+            option.classList.remove('hidden');
         } else {
             option.style.display = 'none';
+            option.classList.add('hidden');
         }
     });
 }
@@ -2095,24 +2183,16 @@ function showStatusMessage(message, type = "info", duration = 2000) {
     // Apply styles based on type
     switch(type) {
         case "success":
-            statusElement.style.backgroundColor = "#d4edda";
-            statusElement.style.color = "#155724";
-            statusElement.style.border = "1px solid #c3e6cb";
+            statusElement.classList.add('status-success');
             break;
         case "error":
-            statusElement.style.backgroundColor = "#f8d7da";
-            statusElement.style.color = "#721c24";
-            statusElement.style.border = "1px solid #f5c6cb";
+            statusElement.classList.add('status-error');
             break;
         case "warning":
-            statusElement.style.backgroundColor = "#fff3cd";
-            statusElement.style.color = "#856404";
-            statusElement.style.border = "1px solid #ffeaa7";
+            statusElement.classList.add('status-warning');
             break;
         default: // info
-            statusElement.style.backgroundColor = "#d1ecf1";
-            statusElement.style.color = "#0c5460";
-            statusElement.style.border = "1px solid #bee5eb";
+            statusElement.classList.add('status-info');
     }
     
     // Show and auto-hide
@@ -2342,30 +2422,10 @@ function generateIdeaBrainstormingPrompt(chapterIndex, sceneIndex) {
         promptParts.push(`<main_character>${systemPrompt.character}</main_character>`);
     }
     
-    // 2. Include global entries for world context
-    const globalEntries = entries.filter(entry => entry.global);
-    if (globalEntries.length > 0) {
-        promptParts.push("<world_context>");
-        
-        globalEntries.forEach(entry => {
-            promptParts.push(`    <entry type="${entry.type}">`);
-            promptParts.push(`        <title>${entry.title}</title>`);
-            if (entry.description && entry.description.trim()) {
-                promptParts.push(`        <description>${entry.description}</description>`);
-            }
-            if (entry.details && entry.details.length > 0) {
-                entry.details.forEach(detail => {
-                    promptParts.push(`        <${detail.title.toLowerCase().replace(/\s+/g, '_')}>${detail.value}</${detail.title.toLowerCase().replace(/\s+/g, '_')}>`);
-                });
-            }
-            promptParts.push("    </entry>");
-        });
-        
-        promptParts.push("</world_context>");
-    }
+    // 8. Collect scene summaries and extract highlighted entries
+    const previousScenes = []
+    let allSceneSummaries = "";
     
-    // 3. Previous scenes for context
-    const previousScenes = [];
     for (let chapterIdx = 0; chapterIdx <= chapterIndex; chapterIdx++) {
         const currentChapter = story.getChapter(chapterIdx);
         if (!currentChapter) continue;
@@ -2380,10 +2440,56 @@ function generateIdeaBrainstormingPrompt(chapterIndex, sceneIndex) {
                     sceneNumber: sceneIdx + 1,
                     summary: prevScene.summary.trim()
                 });
+                allSceneSummaries += prevScene.summary.trim() + "\n";
             }
         }
     }
     
+    if (scene.summary && scene.summary.trim()) {
+        allSceneSummaries += scene.summary.trim() + "\n";
+    }
+    
+    // Get highlighted entries and merge with global entries
+    const highlightedEntries = extractHighlightedEntries(allSceneSummaries);
+    const globalEntries = entries.filter(entry => entry.global);
+    const allRelevantEntries = new Map();
+    
+    // Add highlighted entries first
+    highlightedEntries.forEach(entry => {
+        allRelevantEntries.set(entry.title, entry);
+    });
+    
+    // Add global entries (ensures global entries are always included)
+    globalEntries.forEach(entry => {
+        allRelevantEntries.set(entry.title, entry);
+    });
+    
+    const finalEntries = Array.from(allRelevantEntries.values());
+    
+    // 10. Add character and world information with proper XML formatting
+    if (finalEntries.length > 0) {
+        promptParts.push("<character_and_world_info>");
+        
+        finalEntries.forEach(entry => {
+            promptParts.push(`    <entry type="${entry.type}">`);
+            promptParts.push(`        <title>${entry.title}</title>`);
+            if (entry.description && entry.description.trim()) {
+                promptParts.push(`        <description>\n            ${entry.description}\n        </description>`);
+            }
+            if (entry.details && entry.details.length > 0) {
+                promptParts.push("        <details>");
+                entry.details.forEach(detail => {
+                    const tagName = detail.title.toLowerCase().replace(/\s+/g, '_');
+                    promptParts.push(`            <${tagName}>${detail.value}</${tagName}>`);
+                });
+                promptParts.push("        </details>");
+            }
+            promptParts.push("    </entry>");
+        });
+        
+        promptParts.push("</character_and_world_info>");
+    }
+        
     if (previousScenes.length > 0) {
         promptParts.push("<previous_scenes>");
         previousScenes.forEach(sceneInfo => {
@@ -2479,6 +2585,39 @@ function deleteScene(chapterIndex, sceneIndex) {
                 showStatusMessage('Failed to delete scene', 'error');
             }
             closeGenericConfirmationDialog();
+        }
+    );
+}
+
+function showUnsavedChangesDialog() {
+    showGenericConfirmationDialog(
+        "Unsaved Changes",
+        "You have unsaved changes that will be lost if you close the application. Are you sure you want to close anyway?",
+        function() {
+            // User confirmed - close anyway
+            hasUnsavedChanges = false; // Prevent the dialog from showing again
+            closeGenericConfirmationDialog();
+            
+            // Close the app immediately
+            if (isElectron()) {
+                // Use the modern Electron API via IPC
+                if (window.electronAPI && window.electronAPI.closeWindow) {
+                    window.electronAPI.closeWindow();
+                } else {
+                    // Fallback: try to use window.close() or force close
+                    try {
+                        window.close();
+                    } catch (e) {
+                        // If window.close() fails, try to force quit
+                        if (window.electronAPI && window.electronAPI.quit) {
+                            window.electronAPI.quit();
+                        }
+                    }
+                }
+            } else {
+                // In browser, close the tab/window
+                window.close();
+            }
         }
     );
 }
