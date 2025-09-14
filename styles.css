@@ -975,7 +975,7 @@ body {
 /* Checkbox Styles */
 .checkbox-field {
   display: flex;
-  align-items: flex-start;
+  align-items: center; /* Changed from flex-start to center */
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
 }
@@ -987,6 +987,7 @@ body {
   cursor: pointer;
   font-weight: 500;
   color: var(--text-primary);
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -1004,6 +1005,7 @@ body {
   justify-content: center;
   transition: all var(--transition-fast);
   position: relative;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
@@ -1021,13 +1023,45 @@ body {
   display: block;
 }
 
-/* Radio Button Styles */
+.checkbox-field.dialog-field {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Radio field container - puts label and radio group on same line */
+.radio-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Radio field label - inline label for radio groups */
+.radio-field-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0; /* Prevent label from shrinking */
+  margin-bottom: 0; /* Override default dialog-field label margin */
+}
+
+/* Ensure radio-group works well within radio-field */
+.radio-field .radio-group {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+  flex: 1; /* Take up remaining space */
+}
+
+/* Radio Button Styles - Clean and consolidated */
 .radio-group {
   display: flex;
   gap: var(--spacing-lg);
   align-items: center;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
+/* Radio label container */
 .radio-label {
   display: flex;
   align-items: center;
@@ -1035,12 +1069,19 @@ body {
   cursor: pointer;
   font-weight: 500;
   color: var(--text-primary);
+  white-space: nowrap; /* Prevent text wrapping */
+  user-select: none; /* Prevent text selection */
 }
 
+/* Hide the default radio button */
 .radio-label input[type="radio"] {
   display: none;
+  position: absolute; /* Remove from document flow completely */
+  opacity: 0;
+  pointer-events: none;
 }
 
+/* Custom radio button styling */
 .radio-mark {
   width: 18px;
   height: 18px;
@@ -1052,12 +1093,23 @@ body {
   justify-content: center;
   transition: all var(--transition-fast);
   position: relative;
+  flex-shrink: 0; /* Prevent the radio mark from shrinking */
+  box-sizing: border-box; /* Ensure consistent sizing */
 }
 
+/* Radio button hover state */
+.radio-label:hover .radio-mark {
+  border-color: var(--border-primary);
+  background: var(--bg-tertiary);
+}
+
+/* Checked state */
 .radio-label input[type="radio"]:checked + .radio-mark {
   border-color: var(--accent-primary);
+  background: var(--bg-secondary);
 }
 
+/* Radio button dot when checked */
 .radio-label input[type="radio"]:checked + .radio-mark::after {
   content: '';
   width: 8px;
@@ -1065,6 +1117,38 @@ body {
   background: var(--accent-primary);
   border-radius: 50%;
   display: block;
+  position: relative;
+}
+
+/* Focus state for accessibility */
+.radio-label input[type="radio"]:focus + .radio-mark {
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb, 0, 0, 0), 0.1);
+  outline: none;
+}
+
+/* Dark theme focus */
+.dark-theme .radio-label input[type="radio"]:focus + .radio-mark {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure radio labels work well within dialog fields */
+.dialog-field .radio-label {
+  margin-bottom: 0; /* Override any inherited margins */
+}
+
+/* Ensure the radio group doesn't get affected by general input styles */
+.dialog-field .radio-group input[type="radio"] {
+  width: auto !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  position: absolute !important;
+  opacity: 0 !important;
+}
+
+/* Text spacing within radio labels */
+.radio-label .radio-mark + * {
+  margin-left: 0; /* Ensure no extra margins on text */
 }
 
 /* Combobox Styles */
@@ -1523,23 +1607,6 @@ body {
 .flex-show {
   display: flex !important;
 }
-
-/* Width setting classes for summary sections */
-.summary-width-10 { flex-basis: 10%; min-width: 10%; max-width: 10%; }
-.summary-width-15 { flex-basis: 15%; min-width: 15%; max-width: 15%; }
-.summary-width-20 { flex-basis: 20%; min-width: 20%; max-width: 20%; }
-.summary-width-25 { flex-basis: 25%; min-width: 25%; max-width: 25%; }
-.summary-width-30 { flex-basis: 30%; min-width: 30%; max-width: 30%; }
-.summary-width-35 { flex-basis: 35%; min-width: 35%; max-width: 35%; }
-.summary-width-40 { flex-basis: 40%; min-width: 40%; max-width: 40%; }
-.summary-width-45 { flex-basis: 45%; min-width: 45%; max-width: 45%; }
-.summary-width-50 { flex-basis: 50%; min-width: 50%; max-width: 50%; }
-.summary-width-55 { flex-basis: 55%; min-width: 55%; max-width: 55%; }
-.summary-width-60 { flex-basis: 60%; min-width: 60%; max-width: 60%; }
-.summary-width-65 { flex-basis: 65%; min-width: 65%; max-width: 65%; }
-.summary-width-70 { flex-basis: 70%; min-width: 70%; max-width: 70%; }
-.summary-width-75 { flex-basis: 75%; min-width: 75%; max-width: 75%; }
-.summary-width-80 { flex-basis: 80%; min-width: 80%; max-width: 80%; }
 
 /* Status message styles */
 .status-success {

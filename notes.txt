@@ -1,7 +1,7 @@
 Tasks:
 entries number and chapter numbers are not updating
-remove error from npm console
-global entry alignment detail type alignment
+dark mode prompt text black
+remove primary colors
 
 Nice to have:
 

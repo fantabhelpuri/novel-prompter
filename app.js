@@ -91,15 +91,20 @@ function handleResizerMouseUp(e) {
 }
 
 function updateAllSceneDividers() {
-    // Update all summary sections to use the new percentage with CSS classes
-    const summarySection = document.querySelectorAll('.summary-section');
-    const widthClass = getSummaryWidthClass(summaryWidthPercentage);
+    // Update all summary sections to use the new percentage with direct styles
+    const summarySections = document.querySelectorAll('.scene-section.summary-section');
     
-    summarySection.forEach(section => {
-        // Remove all existing width classes
-        section.className = section.className.replace(/summary-width-\d+/g, '');
-        // Add the new width class
-        section.classList.add(widthClass);
+    summarySections.forEach(section => {
+        // Apply the width directly as inline styles
+        section.style.flexBasis = `${summaryWidthPercentage}%`;
+        section.style.minWidth = `${summaryWidthPercentage}%`;
+        section.style.maxWidth = `${summaryWidthPercentage}%`;
+    });
+    
+    // Also update the text sections to fill the remaining space
+    const textSections = document.querySelectorAll('.scene-section.text-section');
+    textSections.forEach(section => {
+        section.style.flex = '1'; // Take up remaining space
     });
 }
 
@@ -212,7 +217,8 @@ function initializeApp() {
     // Add these event listeners in initializeApp function
     document.getElementById('detail-dialog-save').addEventListener('click', saveDetailDialog);
     document.getElementById('detail-dialog-cancel').addEventListener('click', closeDetailDialog);
-
+    document.getElementById('detail-dialog-close').addEventListener('click', closeDetailDialog);
+    
     // Radio button listeners
     document.getElementById('value-type-text').addEventListener('change', showTextField);
     document.getElementById('value-type-combobox').addEventListener('change', showComboboxField);
@@ -1088,7 +1094,7 @@ function renderStory() {
 
         // Add scene button
         const addSceneButton = document.createElement('button');
-        addSceneButton.className = 'add-button';
+        addSceneButton.className = 'add-button primary-btn';
         addSceneButton.textContent = 'Add Scene';
         addSceneButton.addEventListener('click', () => {
             addNewScene(chapterIndex);
