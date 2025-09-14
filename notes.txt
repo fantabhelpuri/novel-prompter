@@ -1,6 +1,4 @@
 Tasks:
-entries number and chapter numbers are not updating
-dark mode prompt text black
 remove primary colors
 
 Nice to have:

@@ -1478,12 +1478,18 @@ body {
 /* Large textarea styles for prompts and exports */
 .prompt-dialog textarea,
 .export-dialog textarea {
-  min-height:380px;
+  min-height: 380px;
   width: 100%;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.5;
   background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  outline: none;
+  transition: all var(--transition-fast);
 }
 
 /* Responsive Design */

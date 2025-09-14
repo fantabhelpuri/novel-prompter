@@ -362,6 +362,7 @@ function initializeBlankProject() {
     hasUnsavedChanges = false;
     document.getElementById('project-title').value = projectTitle;
     updateTitle();
+    updateStats();
 }
 
 function addSampleEntries() {
@@ -426,7 +427,8 @@ function addNewChapter() {
     const chapterIndex = story.addChapter();
     story.addSceneToChapter(chapterIndex, "", "");
     renderStory();
-    markAsChanged(); // Add this line
+    markAsChanged();
+    updateStats();
 }
 
 function addNewScene(chapterIndex) {
@@ -474,6 +476,8 @@ function renderEntries() {
         
         entriesList.appendChild(entryDiv);
     });
+
+    updateStats();
 }
 
 function openEntryDialog(entry, index) {
@@ -1104,6 +1108,8 @@ function renderStory() {
         chapterDiv.appendChild(scenesContainer);
         chaptersContainer.appendChild(chapterDiv);
     });
+
+    updateStats();
 }
 
 // Function to process text and create links for matching entry titles
@@ -2626,6 +2632,23 @@ function showUnsavedChangesDialog() {
             }
         }
     );
+}
+
+// Function to update the stats display
+function updateStats() {
+    // Update entry count
+    const entryCountElement = document.getElementById('entry-count');
+    if (entryCountElement) {
+        entryCountElement.textContent = entries.length.toString();
+    }
+    
+    // Update story stats (chapter count)
+    const storyStatsElement = document.getElementById('story-stats');
+    if (storyStatsElement) {
+        const chapterCount = story.chapters ? story.chapters.length : 0;
+        const plural = chapterCount === 1 ? 'chapter' : 'chapters';
+        storyStatsElement.textContent = `${chapterCount} ${plural}`;
+    }
 }
 
 // Initialize the application when the page loads
