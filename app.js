@@ -213,7 +213,51 @@ function initializeApp() {
 
     document.getElementById('collapse-sidebar-btn').addEventListener('click', toggleSidebar);
 
+    document.getElementById('options-btn').addEventListener('click', openOptionsDialog);
+    document.getElementById('options-close').addEventListener('click', closeOptionsDialog);
+    document.getElementById('theme-toggle').addEventListener('change', toggleTheme);
+
+    // Close options dialog when clicking overlay
+    document.getElementById('options-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeOptionsDialog();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-chapter-btn')) {
+            const chapterIndex = parseInt(e.target.dataset.chapterIndex);
+            deleteChapter(chapterIndex);
+        } else if (e.target.classList.contains('delete-scene-btn')) {
+            const chapterIndex = parseInt(e.target.dataset.chapterIndex);
+            const sceneIndex = parseInt(e.target.dataset.sceneIndex);
+            deleteScene(chapterIndex, sceneIndex);
+        }
+    });
+    
     initializeResizers();
+}
+
+function openOptionsDialog() {
+    document.getElementById('options-overlay').classList.add('show');
+}
+
+function closeOptionsDialog() {
+    document.getElementById('options-overlay').classList.remove('show');
+}
+
+function toggleTheme() {
+    const isDark = document.getElementById('theme-toggle').checked;
+    document.body.className = isDark ? 'dark-theme' : 'light-theme';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+// Load saved theme on startup
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const isDark = savedTheme === 'dark';
+    document.body.className = isDark ? 'dark-theme' : 'light-theme';
+    document.getElementById('theme-toggle').checked = isDark;
 }
 
 function newProject() {
@@ -405,41 +449,78 @@ function closeEntryDialog() {
 }
 
 function saveEntryDialog() {
-    if (!currentEditingEntry) return;
+    // Get all input elements
+    const titleInput = document.getElementById('dialog-title');
+    const typeInput = document.getElementById('dialog-type-input');
+    const globalInput = document.getElementById('dialog-global');
+    const descriptionInput = document.getElementById('dialog-description');
     
-    const newTitle = document.getElementById('dialog-title').value.trim();
+    // Always ensure inputs are enabled at the start of validation
+    const allInputs = [titleInput, typeInput, globalInput, descriptionInput];
+    allInputs.forEach(input => {
+        if (input) input.disabled = false;
+    });
     
-    // Validate title is not empty
-    if (!newTitle) {
-        alert('Entry title cannot be empty.');
-        return;
+    // Validate required fields
+    const title = titleInput.value.trim();
+    
+    if (!title) {
+        // Show error message without disabling inputs
+        showStatusMessage('Title is required', 'error');
+        titleInput.focus();
+        titleInput.select();
+        return; // Stop here, but keep inputs enabled
     }
     
-    // Validate title uniqueness
-    if (!validateEntryTitle(newTitle, currentEditingIndex)) {
-        alert(`An entry with the title "${newTitle}" already exists. Please choose a different title.`);
-        return;
+    // If we get here, validation passed
+    try {
+        // Get other values
+        const type = typeInput.value.trim();
+        const isGlobal = globalInput.checked;
+        const description = document.getElementById('dialog-description').value.trim();
+        
+        if (currentEditingIndex === -1) {
+            // Creating new entry
+            const newEntry = new Entry(title, type, isGlobal, description);
+            
+            // Add details if any exist
+            const detailElements = document.querySelectorAll('.detail-display-item');
+            detailElements.forEach(detailElement => {
+                const detailTitle = detailElement.querySelector('.detail-info strong').textContent;
+                const detailValue = detailElement.querySelector('.detail-value').textContent;
+                newEntry.addDetail(detailTitle, detailValue);
+            });
+            
+            // Add to entries array
+            entries.push(newEntry);
+            
+            // Update detail registry
+            newEntry.details.forEach(detail => {
+                detailRegistry.addValueToDetailType(detail.title, detail.value);
+            });
+        } else {
+            // Editing existing entry
+            const entry = entries[currentEditingIndex];
+            entry.title = title;
+            entry.type = type;
+            entry.global = isGlobal;
+            entry.description = description;
+            
+            // Update details (you may need to implement this based on your detail handling)
+            // entry.details = ... (handle detail updates)
+        }
+        
+        // Mark as changed and update UI
+        markAsChanged();
+        renderEntries();
+        closeEntryDialog();
+        showStatusMessage('Entry saved successfully', 'success');
+        
+    } catch (error) {
+        // Handle any save errors without disabling inputs
+        console.error('Error saving entry:', error);
+        showStatusMessage('Error saving entry: ' + error.message, 'error');
     }
-    
-    // Update entry fields
-    currentEditingEntry.title = newTitle;
-    currentEditingEntry.type = document.getElementById('dialog-type-input').value;
-    currentEditingEntry.global = document.getElementById('dialog-global').checked;
-    currentEditingEntry.description = document.getElementById('dialog-description').value;
-    
-    // If this is a new entry (currentEditingIndex === -1), add it to the entries array
-    if (currentEditingIndex === -1) {
-        entries.push(currentEditingEntry);
-    }
-    // If it's an existing entry, it's already in the array and just gets updated above
-    
-    // Re-render entries and close dialog
-    renderEntries();
-    closeEntryDialog();
-    markAsChanged();
-    
-    // Update character dropdown if system prompt dialog is open
-    updateCharacterDropdown();
 }
 
 function updateCharacterDropdown() {
@@ -776,7 +857,12 @@ function renderStory() {
 
         const chapterHeader = document.createElement('div');
         chapterHeader.className = 'chapter-header';
-        chapterHeader.textContent = `Chapter ${chapterIndex + 1}`;
+        chapterHeader.innerHTML = `
+            <span>Chapter ${chapterIndex + 1}</span>
+            <button class="danger-btn delete-chapter-btn" onclick="deleteChapter(${chapterIndex})" title="Delete Chapter">
+                <i class="icon">🗑</i>
+            </button>
+        `;
         chapterDiv.appendChild(chapterHeader);
 
         const scenesContainer = document.createElement('div');
@@ -788,7 +874,12 @@ function renderStory() {
 
             const sceneHeader = document.createElement('div');
             sceneHeader.className = 'scene-header';
-            sceneHeader.textContent = `Scene ${sceneIndex + 1}`;
+            sceneHeader.innerHTML = `
+                <span>Scene ${sceneIndex + 1}</span>
+                <button class="danger-btn delete-scene-btn" onclick="deleteScene(${chapterIndex}, ${sceneIndex})" title="Delete Scene">
+                    <i class="icon">🗑</i>
+                </button>
+            `;
             sceneDiv.appendChild(sceneHeader);
 
             const sceneContent = document.createElement('div');
@@ -2326,6 +2417,70 @@ function generateIdeaBrainstormingPrompt(chapterIndex, sceneIndex) {
     promptParts.push("</brainstorming_request>");
     
     return promptParts.join("\n");
+}
+
+function deleteChapter(chapterIndex) {
+    if (chapterIndex < 0 || chapterIndex >= story.chapters.length) {
+        showStatusMessage('Invalid chapter index', 'error');
+        return;
+    }
+    
+    const chapter = story.chapters[chapterIndex];
+    const sceneCount = chapter.scenes.length;
+    const chapterNumber = chapterIndex + 1;
+    
+    let message = `Are you sure you want to delete Chapter ${chapterNumber}?`;
+    if (sceneCount > 0) {
+        message += ` This will also delete ${sceneCount} scene${sceneCount > 1 ? 's' : ''}.`;
+    }
+    
+    showGenericConfirmationDialog(
+        "Delete Chapter",
+        message,
+        function() {
+            const removedChapter = story.removeChapter(chapterIndex);
+            if (removedChapter) {
+                renderStory();
+                markAsChanged();
+                showStatusMessage(`Chapter ${chapterNumber} deleted successfully`, 'success');
+            } else {
+                showStatusMessage('Failed to delete chapter', 'error');
+            }
+            closeGenericConfirmationDialog();
+        }
+    );
+}
+
+function deleteScene(chapterIndex, sceneIndex) {
+    if (chapterIndex < 0 || chapterIndex >= story.chapters.length) {
+        showStatusMessage('Invalid chapter index', 'error');
+        return;
+    }
+    
+    const chapter = story.chapters[chapterIndex];
+    if (sceneIndex < 0 || sceneIndex >= chapter.scenes.length) {
+        showStatusMessage('Invalid scene index', 'error');
+        return;
+    }
+    
+    const chapterNumber = chapterIndex + 1;
+    const sceneNumber = sceneIndex + 1;
+    
+    showGenericConfirmationDialog(
+        "Delete Scene",
+        `Are you sure you want to delete Scene ${sceneNumber} from Chapter ${chapterNumber}?`,
+        function() {
+            const removedScene = chapter.removeScene(sceneIndex);
+            if (removedScene) {
+                renderStory();
+                markAsChanged();
+                showStatusMessage(`Scene ${sceneNumber} deleted successfully`, 'success');
+            } else {
+                showStatusMessage('Failed to delete scene', 'error');
+            }
+            closeGenericConfirmationDialog();
+        }
+    );
 }
 
 // Initialize the application when the page loads
