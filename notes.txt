@@ -1,0 +1,15 @@
+Tasks:
+
+Nice to have:
+
+Problem:
+
+Stretch:
+renaming a character should update references everywhere in the summaries?
+
+Prompt:
+I'm working on an app that let's you create an outline of a book and then convert the outline into prompts that can be fed into an AI to get back prose. I call it novel prompter. It is an electron app. I've attached all the code files. Read all the files and prepare for further instructions
+
+Tips:
+use full names in character descriptions to show relations. Dont use pronouns as it can confuse the AI
+
